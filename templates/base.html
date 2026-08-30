@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}QR Attendance System{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    {% if current_user %}
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <span class="logo-icon"></span>
+                    <span class="logo-text">QR Attend</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    {% if current_user.role_name == 'ADMIN' %}
+                    <li><a href="{{ url_for('admin.dashboard') }}" class="{% if request.endpoint and 'admin.dashboard' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Dashboard</a></li>
+                    <li><a href="{{ url_for('admin.users_list') }}" class="{% if request.endpoint and ('admin.users' in request.endpoint) %}active{% endif %}">
+                        <span class="nav-icon"></span> Users</a></li>
+                    <li><a href="{{ url_for('admin.rooms_list') }}" class="{% if request.endpoint and 'admin.rooms' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Rooms</a></li>
+                    <li><a href="{{ url_for('admin.bookings_list') }}" class="{% if request.endpoint and 'admin.bookings' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Bookings</a></li>
+                    <li><a href="{{ url_for('admin.attendance_sessions') }}" class="{% if request.endpoint and 'admin.attendance' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Attendance</a></li>
+                    <li><a href="{{ url_for('student.scan_qr') }}" class="{% if request.endpoint and request.endpoint == 'student.scan_qr' %}active{% endif %}">
+                        <span class="nav-icon"></span> Scan QR</a></li>
+                    <li><a href="{{ url_for('admin.complaints_list') }}" class="{% if request.endpoint and 'admin.complaints' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Complaints</a></li>
+                    <li><a href="{{ url_for('admin.reports') }}" class="{% if request.endpoint and 'admin.reports' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Reports</a></li>
+                    <li><a href="{{ url_for('admin.audit_logs') }}" class="{% if request.endpoint and 'admin.audit' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Audit Logs</a></li>
+
+                    {% elif current_user.role_name == 'FACULTY' %}
+                    <li><a href="{{ url_for('faculty.dashboard') }}" class="{% if request.endpoint and 'faculty.dashboard' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Dashboard</a></li>
+                    <li><a href="{{ url_for('faculty.sessions_list') }}" class="{% if request.endpoint and 'faculty.session' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Attendance Sessions</a></li>
+                    <li><a href="{{ url_for('faculty.bookings_list') }}" class="{% if request.endpoint and 'faculty.booking' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> My Bookings</a></li>
+                    <li><a href="{{ url_for('faculty.rooms_list') }}"><span class="nav-icon"></span> Rooms</a></li>
+                    <li><a href="{{ url_for('student.scan_qr') }}"><span class="nav-icon"></span> Scan QR</a></li>
+                    <li><a href="{{ url_for('faculty.complaints_list') }}" class="{% if request.endpoint and 'faculty.complaint' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> My Complaints</a></li>
+
+                    {% elif current_user.role_name == 'REPRESENTATIVE' %}
+                    <li><a href="{{ url_for('representative.dashboard') }}" class="{% if request.endpoint and 'representative.dashboard' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Dashboard</a></li>
+                    <li><a href="{{ url_for('representative.sessions_list') }}" class="{% if request.endpoint and 'representative.session' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Sessions</a></li>
+                    <li><a href="{{ url_for('representative.bookings_list') }}" class="{% if request.endpoint and 'representative.booking' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> My Bookings</a></li>
+                    <li><a href="{{ url_for('representative.rooms_list') }}"><span class="nav-icon"></span> Rooms</a></li>
+                    <li><a href="{{ url_for('student.scan_qr') }}"><span class="nav-icon"></span> Scan QR</a></li>
+                    <li><a href="{{ url_for('representative.complaints_list') }}" class="{% if request.endpoint and 'representative.complaint' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> My Complaints</a></li>
+
+                    {% elif current_user.role_name == 'STUDENT' %}
+                    <li><a href="{{ url_for('student.dashboard') }}" class="{% if request.endpoint and 'student.dashboard' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Dashboard</a></li>
+                    <li><a href="{{ url_for('student.scan_qr') }}" class="{% if request.endpoint and 'student.scan' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Scan QR</a></li>
+                    <li><a href="{{ url_for('student.attendance_history') }}" class="{% if request.endpoint and 'student.attendance' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> My Attendance</a></li>
+                    <li><a href="{{ url_for('student.rooms_list') }}" class="{% if request.endpoint and 'student.rooms' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> Rooms</a></li>
+                    <li><a href="{{ url_for('student.bookings_list') }}" class="{% if request.endpoint and 'student.booking' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> My Bookings</a></li>
+                    <li><a href="{{ url_for('student.complaints_list') }}" class="{% if request.endpoint and 'student.complaint' in request.endpoint %}active{% endif %}">
+                        <span class="nav-icon"></span> My Complaints</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="user-avatar">{{ current_user.full_name[0] }}</div>
+                    <div class="user-info">
+                        <span class="user-name">{{ current_user.full_name }}</span>
+                        <span class="user-role">{{ current_user.role_name }}</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <button class="sidebar-toggle" onclick="toggleSidebar()"></button>
+                <div class="topbar-title">
+                    <h1>{% block page_title %}{% endblock %}</h1>
+                </div>
+                <div class="topbar-actions">
+                    <a href="{{ url_for('auth.profile') }}" class="topbar-btn"> Profile</a>
+                    <a href="{{ url_for('auth.change_password') }}" class="topbar-btn"> Password</a>
+                    <a href="{{ url_for('auth.logout') }}" class="topbar-btn topbar-btn-logout"> Logout</a>
+                </div>
+            </header>
+
+            <!-- Flash Messages -->
+            <div class="flash-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="flash flash-{{ category }}" onclick="this.remove()">
+                    <span class="flash-icon">
+                        {% if category == 'success' %}{% elif category == 'danger' %}{% elif category == 'warning' %}{% else %}{% endif %}
+                    </span>
+                    <span class="flash-text">{{ message }}</span>
+                    <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- Page Content -->
+            <main class="page-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    {% else %}
+    {% block public_content %}{% endblock %}
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

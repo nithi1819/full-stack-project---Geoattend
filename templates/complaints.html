@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/{{user.role|lower}}" class="nav-link"> Dashboard</a>
+<a href="/{{user.role|lower}}/complaints" class="nav-link active"> Complaints</a>
+{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Complaints</h1><button class="btn btn-primary" onclick="showModal('complaintModal')">+ New Complaint</button></div>
+<div id="complaints"><div class="loading">Loading...</div></div>
+<div class="modal" id="complaintModal"><div class="modal-content"><h3>New Complaint</h3>
+  <div class="form-row"><div class="form-group"><label>Category</label><select id="cCategory" class="form-control"><option>ELECTRICAL</option><option>PLUMBING</option><option>AC</option><option>FURNITURE</option><option>INTERNET</option><option>CLASSROOM</option><option>LABORATORY</option><option>CLEANING</option><option>OTHER</option></select></div><div class="form-group"><label>Priority</label><select id="cPriority" class="form-control"><option>MEDIUM</option><option>LOW</option><option>HIGH</option><option>CRITICAL</option></select></div></div>
+  <div class="form-group"><label>Location</label><input type="text" id="cLocation" class="form-control" placeholder="Room 201, Block A"></div>
+  <div class="form-group"><label>Description</label><textarea id="cDesc" class="form-control" rows="4" placeholder="Describe the issue..."></textarea></div>
+  <div class="btn-group"><button class="btn btn-secondary" onclick="hideModal('complaintModal')">Cancel</button><button class="btn btn-primary" onclick="createComplaint()">Submit</button></div>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const compColors={OPEN:'yellow',ASSIGNED:'blue',IN_PROGRESS:'purple',RESOLVED:'green',CLOSED:'gray'};
+async function load(){
+  const cs=await api('/api/complaints');
+  document.getElementById('complaints').innerHTML=cs.length?cs.map(c=>`<div class="card mb-2"><div class="flex-between"><span><strong>${c.category}</strong> <span class="badge badge-${compColors[c.status]||'gray'}">${c.status?.replace(/_/g,' ')}</span> <span class="badge badge-${c.priority==='HIGH'||c.priority==='CRITICAL'?'red':'gray'}">${c.priority}</span></span>
+  <div class="btn-group">${'{{user.role}}'==='ADMIN'||'{{user.role}}'==='MAINTENANCE'?`<button class="btn btn-sm btn-secondary" onclick="updateStatus('${c.id}','ASSIGNED')">Assign</button><button class="btn btn-sm btn-primary" onclick="updateStatus('${c.id}','RESOLVED')">Resolve</button><button class="btn btn-sm btn-secondary" onclick="updateStatus('${c.id}','CLOSED')">Close</button>`:''}</div></div>
+  <p class="text-muted text-sm">${c.location}</p><p>${c.description}</p><p class="text-xs text-muted">By: ${c.first_name} ${c.last_name}</p></div>`).join(''):'<p class="empty">No complaints yet</p>';
+}
+async function createComplaint(){
+  const res=await api('/api/complaints','POST',{category:document.getElementById('cCategory').value,location:document.getElementById('cLocation').value,description:document.getElementById('cDesc').value,priority:document.getElementById('cPriority').value});
+  if(res?.error){alert(res.error);return;}hideModal('complaintModal');load();
+}
+async function updateStatus(id,status){await api(`/api/complaints/${id}/status`,'PUT',{status});load();}
+load();
+</script>
+{% endblock %}

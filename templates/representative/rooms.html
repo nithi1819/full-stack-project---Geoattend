@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Rooms - Representative{% endblock %}
+{% block page_title %}Available Rooms{% endblock %}
+{% block content %}
+<div class="content-wrapper"><div class="card"><div class="card-header"><h2>Available Rooms</h2><a href="{{ url_for('representative.bookings_list') }}" class="btn btn-secondary">My Bookings</a></div><div class="card-body">
+<form method="GET" class="filter-bar"><input type="text" name="search" placeholder="Search room, building..." value="{{ search }}" class="form-input-sm"><select name="type" class="form-select-sm"><option value="">All Types</option>{% for t in ['Classroom','Seminar Hall','Lab','Conference Room','Auditorium'] %}<option value="{{ t }}" {{ 'selected' if type_filter == t }}>{{ t }}</option>{% endfor %}</select><button type="submit" class="btn btn-sm btn-primary">Filter</button></form>
+{% if rooms %}<div class="room-grid">{% for r in rooms %}<div class="room-card-full"><div class="room-card-header"><h3>{{ r.room_number }}</h3><span class="badge badge-info">{{ r.room_type }}</span></div><p><strong>Building:</strong> {{ r.building }}, Floor {{ r.floor }}</p><p><strong>Capacity:</strong> {{ r.capacity }} seats</p>{% if r.facilities %}<p class="text-sm"><strong>Facilities:</strong> {{ r.facilities }}</p>{% endif %}<a href="{{ url_for('representative.booking_create', room_id=r.room_id) }}" class="btn btn-sm btn-primary">Book This Room</a></div>{% endfor %}</div>{% else %}<div class="empty-state">No rooms found.</div>{% endif %}
+</div></div></div>
+{% endblock %}

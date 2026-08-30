@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/student" class="nav-link active"> Dashboard</a>
+<a href="/student/scan" class="nav-link highlight"> Scan Attendance</a>
+<a href="/student/timetable" class="nav-link"> Timetable</a>
+<a href="/student/od" class="nav-link"> OD Applications</a>
+<a href="/student/rooms" class="nav-link"> Book Room</a>
+<a href="/student/complaints" class="nav-link"> Complaints</a>
+<a href="/student/calendar" class="nav-link"> Calendar</a>
+<a href="/student/devices" class="nav-link"> My Device</a>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 id="welcomeMsg">Welcome</h1>
+  <p class="text-muted" id="deptInfo"></p>
+</div>
+<div id="defaulterWarning"></div>
+<a href="/student/scan" class="scan-cta">
+  <span class="scan-icon"></span>
+  <div><strong>Scan Attendance</strong><br><small>Open camera to scan QR code</small></div>
+</a>
+<div class="stats-grid" id="statsGrid"><div class="loading">Loading...</div></div>
+<div class="grid-2col mt-6">
+  <div class="card"><h3>Today's Classes</h3><div id="timetable"><div class="loading">Loading...</div></div></div>
+  <div class="card"><h3>Subject-wise Attendance</h3><div id="subjectAtt"><div class="loading">Loading...</div></div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function load() {
+  const d = await api('/api/dashboard/student');
+  if (!d) return;
+  const st = d.student;
+  document.getElementById('welcomeMsg').textContent = `Welcome, ${st?.user?.first_name || 'Student'}`;
+  document.getElementById('deptInfo').textContent = `${st?.dept_name || ''} — Section ${st?.section_name || ''}`;
+  if (d.defaulter_status !== 'OK') {
+    const cls = d.defaulter_status === 'CRITICAL' ? 'alert-error' : 'alert-warning';
+    document.getElementById('defaulterWarning').innerHTML = `<div class="alert ${cls}"> Attendance ${d.defaulter_status}: ${d.overall_percentage}% (min: ${d.warning_threshold}%)</div>`;
+  }
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card center"><div class="stat-value ${d.overall_percentage>=75?'text-green':d.overall_percentage>=65?'text-amber':'text-red'}">${d.overall_percentage}%</div><div class="stat-label">Overall</div></div>
+    <div class="stat-card center"><div class="stat-value text-green">${d.total_present}</div><div class="stat-label">Present</div></div>
+    <div class="stat-card center"><div class="stat-value text-red">${d.total_absent}</div><div class="stat-label">Absent</div></div>
+    <div class="stat-card center"><div class="stat-value text-amber">${d.total_od}</div><div class="stat-label">OD</div></div>
+  `;
+  document.getElementById('timetable').innerHTML = d.timetable?.length ? d.timetable.map(t =>
+    `<div class="list-item"><div class="list-time">${t.start_time}-${t.end_time}</div><div><strong>${t.subject_name}</strong><br><small>${t.room_name} • ${t.teacher_first} ${t.teacher_last||''}</small></div></div>`
+  ).join('') : '<p class="empty">No classes today</p>';
+  const atts = d.attendances || [];
+  const subMap = {};
+  atts.forEach(a => {
+    if (!subMap[a.subject_name]) subMap[a.subject_name] = {p:0,t:0};
+    subMap[a.subject_name].t++;
+    if (['PRESENT','OD'].includes(a.status)) subMap[a.subject_name].p++;
+  });
+  document.getElementById('subjectAtt').innerHTML = Object.keys(subMap).length ? Object.entries(subMap).map(([name, s]) => {
+    const pct = Math.round(s.p / s.t * 100);
+    const cls = pct >= 75 ? 'progress-green' : pct >= 65 ? 'progress-amber' : 'progress-red';
+    return `<div class="att-subject"><div class="att-header"><span>${name}</span><strong class="${pct>=75?'text-green':pct>=65?'text-amber':'text-red'}">${pct}%</strong></div><div class="progress-bar"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div></div>`;
+  }).join('') : '<p class="empty">No attendance data yet</p>';
+}
+load();
+</script>
+{% endblock %}

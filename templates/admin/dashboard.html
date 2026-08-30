@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard - QR Attendance{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.total_users }}</span>
+                <span class="stat-label">Total Users</span>
+            </div>
+        </div>
+        <div class="stat-card stat-info">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.total_students }}</span>
+                <span class="stat-label">Students</span>
+            </div>
+        </div>
+        <div class="stat-card stat-success">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.total_faculty }}</span>
+                <span class="stat-label">Faculty</span>
+            </div>
+        </div>
+        <div class="stat-card stat-warning">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.total_reps }}</span>
+                <span class="stat-label">Representatives</span>
+            </div>
+        </div>
+        <div class="stat-card stat-secondary">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.total_rooms }}</span>
+                <span class="stat-label">Rooms</span>
+            </div>
+        </div>
+        <div class="stat-card stat-primary">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.todays_bookings }}</span>
+                <span class="stat-label">Today's Bookings</span>
+            </div>
+        </div>
+        <div class="stat-card stat-warning">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.pending_bookings }}</span>
+                <span class="stat-label">Pending Bookings</span>
+            </div>
+        </div>
+        <div class="stat-card stat-success">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.active_sessions }}</span>
+                <span class="stat-label">Active Sessions</span>
+            </div>
+        </div>
+        <div class="stat-card stat-info">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.todays_attendance }}</span>
+                <span class="stat-label">Today's Attendance</span>
+            </div>
+        </div>
+        <div class="stat-card stat-danger">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.open_complaints }}</span>
+                <span class="stat-label">Open Complaints</span>
+            </div>
+        </div>
+        <div class="stat-card stat-danger">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.urgent_complaints }}</span>
+                <span class="stat-label">Urgent Complaints</span>
+            </div>
+        </div>
+        <div class="stat-card stat-success">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-value">{{ stats.resolved_complaints }}</span>
+                <span class="stat-label">Resolved Complaints</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-header">
+                <h3>Recent Bookings</h3>
+                <a href="{{ url_for('admin.bookings_list') }}" class="btn btn-sm btn-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_bookings %}
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>Room</th><th>Date</th><th>By</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for b in recent_bookings %}
+                        <tr>
+                            <td>{{ b.room_number }}</td>
+                            <td>{{ b.booking_date|date_format }}</td>
+                            <td>{{ b.requested_by_name }}</td>
+                            <td><span class="badge badge-{{ b.status|status_badge }}">{{ b.status }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">No recent bookings.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Recent Complaints</h3>
+                <a href="{{ url_for('admin.complaints_list') }}" class="btn btn-sm btn-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_complaints %}
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>Title</th><th>Priority</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for c in recent_complaints %}
+                        <tr>
+                            <td><a href="{{ url_for('admin.complaint_detail', complaint_id=c.complaint_id) }}">{{ c.title[:30] }}</a></td>
+                            <td><span class="badge badge-{{ c.priority|status_badge }}">{{ c.priority }}</span></td>
+                            <td><span class="badge badge-{{ c.status|status_badge }}">{{ c.status }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">No recent complaints.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

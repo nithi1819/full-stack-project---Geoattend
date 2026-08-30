@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Attendance Records - Faculty{% endblock %}
+{% block page_title %}Records: {{ session.class_name }}{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="card">
+        <div class="card-header">
+            <h2>Session: {{ session.class_name }} - {{ session.course_name or '' }}</h2>
+            <a href="{{ url_for('faculty.sessions_list') }}" class="btn btn-sm btn-secondary">← Back</a>
+        </div>
+        <div class="card-body">
+            <div class="info-grid" style="margin-bottom: 1rem;">
+                <div class="info-item"><label>Date</label><span>{{ session.session_date|date_format }}</span></div>
+                <div class="info-item"><label>Time</label><span>{{ session.start_time }} - {{ session.end_time }}</span></div>
+                <div class="info-item"><label>Status</label><span class="badge badge-{{ 'success' if session.is_active else 'secondary' }}">{{ 'Active' if session.is_active else 'Closed' }}</span></div>
+                <div class="info-item"><label>Marked</label><span>{{ records|length }} student(s)</span></div>
+            </div>
+
+            {% if records %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Student #</th><th>Name</th><th>Status</th><th>Marked At</th></tr></thead>
+                    <tbody>
+                        {% for r in records %}
+                        <tr>
+                            <td>{{ r.student_number }}</td>
+                            <td>{{ r.student_name }}</td>
+                            <td><span class="badge badge-{{ r.status|status_badge }}">{{ r.status }}</span></td>
+                            <td>{{ r.marked_at|datetime_format }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">No attendance records for this session yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/admin" class="nav-link"> Dashboard</a>
+<a href="/admin/users" class="nav-link"> Users</a>
+<a href="/admin/attendance" class="nav-link"> Attendance</a>
+<a href="/admin/audit-logs" class="nav-link active"> Audit Logs</a>
+<a href="/admin/reports" class="nav-link"> Reports</a>
+{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Audit Logs</h1><p class="text-muted" id="totalInfo"></p></div>
+<div class="card"><div id="logsTable"><div class="loading">Loading...</div></div></div>
+<div class="flex-between mt-4"><span id="pageInfo" class="text-sm text-muted"></span><div class="btn-group"><button class="btn btn-secondary btn-sm" onclick="page--;loadLogs()">Prev</button><button class="btn btn-secondary btn-sm" onclick="page++;loadLogs()">Next</button></div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+let page=1;
+async function loadLogs(){
+  const d=await api(`/api/audit-logs?page=${page}`);
+  if(!d)return;
+  document.getElementById('totalInfo').textContent=`${d.total} records`;
+  document.getElementById('logsTable').innerHTML=`<table class="table"><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th></tr></thead><tbody>${d.logs.map(l=>`<tr><td class="text-sm">${new Date(l.created_at).toLocaleString()}</td><td class="text-sm">${l.first_name?l.first_name+' '+l.last_name:'System'}</td><td><span class="badge badge-gray">${l.action?.replace(/_/g,' ')}</span></td><td class="text-sm text-muted">${l.entity_type||''}${l.entity_id?' '+l.entity_id.substring(0,8)+'...':''}</td></tr>`).join('')}</tbody></table>`;
+  document.getElementById('pageInfo').textContent=`Page ${d.page} of ${Math.ceil(d.total/30)||1}`;
+}
+loadLogs();
+</script>
+{% endblock %}

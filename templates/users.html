@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/admin" class="nav-link"> Dashboard</a>
+<a href="/admin/users" class="nav-link active"> Users</a>
+<a href="/admin/timetable" class="nav-link"> Timetable</a>
+<a href="/admin/rooms" class="nav-link"> Rooms</a>
+<a href="/admin/devices" class="nav-link"> Devices</a>
+<a href="/admin/audit-logs" class="nav-link"> Audit Logs</a>
+<a href="/admin/reports" class="nav-link"> Reports</a>
+<a href="/admin/settings" class="nav-link"> Settings</a>
+{% endblock %}
+{% block content %}
+<div class="page-header"><h1>User Management</h1></div>
+<div class="flex gap-2 mb-4"><input type="text" id="searchInput" class="form-control" placeholder="Search..." oninput="debounce(loadUsers,300)()">
+  <select id="roleFilter" class="form-control" style="max-width:200px" onchange="loadUsers()"><option value="">All Roles</option><option>ADMIN</option><option>TEACHER</option><option>STUDENT</option><option>REP</option><option>MAINTENANCE</option><option>SECURITY</option></select></div>
+<div class="card"><div id="usersTable"><div class="loading">Loading...</div></div></div>
+<div class="flex-between mt-4"><span id="pageInfo" class="text-sm text-muted"></span><div class="btn-group"><button class="btn btn-secondary btn-sm" onclick="page--;loadUsers()">Prev</button><button class="btn btn-secondary btn-sm" onclick="page++;loadUsers()">Next</button></div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+let page=1;
+const roleColors={ADMIN:'badge-brand',TEACHER:'badge-indigo',STUDENT:'badge-green',REP:'badge-green',MAINTENANCE:'badge-amber',SECURITY:'badge-red'};
+async function loadUsers(){
+  const params=new URLSearchParams({page,search:document.getElementById('searchInput').value,role:document.getElementById('roleFilter').value});
+  const d=await api(`/api/users?${params}`);
+  if(!d)return;
+  document.getElementById('usersTable').innerHTML=`<table class="table"><thead><tr><th>User</th><th>Role</th><th>Status</th><th>Last Login</th><th>Action</th></tr></thead><tbody>${d.users.map(u=>`<tr><td><div class="flex gap-2 items-center"><div class="avatar-sm">${u.first_name[0]}${u.last_name[0]}</div><div><strong>${u.first_name} ${u.last_name}</strong><br><small class="text-muted">${u.email}</small></div></div></td><td><span class="badge ${roleColors[u.role]||''}">${u.role}</span></td><td><span class="badge badge-${u.status==='ACTIVE'?'green':'red'}">${u.status}</span></td><td class="text-sm">${u.last_login?new Date(u.last_login).toLocaleDateString():'Never'}</td><td><button class="btn btn-sm ${u.status==='ACTIVE'?'btn-danger':'btn-primary'}" onclick="toggleStatus('${u.id}','${u.status}')">${u.status==='ACTIVE'?'Suspend':'Activate'}</button></td></tr>`).join('')}</tbody></table>`;
+  document.getElementById('pageInfo').textContent=`Page ${d.page} of ${Math.ceil(d.total/20)||1} (${d.total} users)`;
+}
+async function toggleStatus(id,status){if(!confirm('Change status?'))return;await api(`/api/users/${id}/status`,'PUT',{status:status==='ACTIVE'?'SUSPENDED':'ACTIVE'});loadUsers();}
+let timer;function debounce(fn,ms){clearTimeout(timer);timer=setTimeout(fn,ms);}
+loadUsers();
+</script>
+{% endblock %}

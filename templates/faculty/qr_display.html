@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}QR Code - Session #{{ session.session_id }}{% endblock %}
+{% block page_title %}QR Code: {{ session.class_name }}{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="grid-2">
+        <!-- QR Code Display -->
+        <div class="card">
+            <div class="card-header">
+                <h2>QR Attendance Code</h2>
+                <a href="{{ url_for('faculty.sessions_list') }}" class="btn btn-sm btn-secondary">← Back</a>
+            </div>
+            <div class="card-body" style="text-align: center;">
+                <div class="qr-display">
+                    <img src="data:image/png;base64,{{ qr_base64 }}" alt="QR Code" class="qr-image" id="qrImage">
+                </div>
+                <div class="qr-info">
+                    <p id="qr-status"><strong>Scan this QR code to mark attendance</strong></p>
+                    <p id="countdown" class="text-muted">QR closes in: <strong>calculating...</strong></p>
+                    <p class="text-muted">Session: {{ session.class_name }} - {{ session.course_name or 'N/A' }}</p>
+                    <p class="text-muted">Date: {{ session.session_date|date_format }}</p>
+                    <p class="text-muted">Time: {{ session.start_time }} - {{ session.end_time }}</p>
+                    <p class="text-muted">QR expires in: <strong>{{ session.qr_expiry_minutes }} minutes</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Details & Actions -->
+        <div>
+            <div class="card">
+                <div class="card-header"><h3>Session Details</h3></div>
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item"><label>Session ID</label><span>#{{ session.session_id }}</span></div>
+                        <div class="info-item"><label>Class</label><span>{{ session.class_name }}</span></div>
+                        <div class="info-item"><label>Course</label><span>{{ session.course_name or '-' }}</span></div>
+                        <div class="info-item"><label>Date</label><span>{{ session.session_date|date_format }}</span></div>
+                        <div class="info-item"><label>Time</label><span>{{ session.start_time }} - {{ session.end_time }}</span></div>
+                        <div class="info-item"><label>Status</label><span class="badge badge-{{ 'success' if session.is_active else 'secondary' }}">{{ 'Active' if session.is_active else 'Closed' }}</span></div>
+                        <div class="info-item"><label>Students Marked</label><span class="stat-value">{{ marked_count }}</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Token Display -->
+            <div class="card">
+                <div class="card-header"><h3>Manual Entry Token</h3></div>
+                <div class="card-body">
+                    <p class="text-muted">Students can also enter this token manually:</p>
+                    <div class="token-display">
+                        <code class="token-code" id="tokenCode">{{ session.qr_token[:20] }}...</code>
+                        <button class="btn btn-xs btn-secondary" onclick="copyToken()">Copy Full Token</button>
+                    </div>
+                    <input type="hidden" id="fullToken" value="{{ session.qr_token }}">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <a href="{{ url_for('faculty.session_records', session_id=session.session_id) }}" class="btn btn-primary btn-block">View Attendance Records</a>
+                    {% if session.is_active %}
+                    <form method="POST" action="{{ url_for('faculty.session_close', session_id=session.session_id) }}" onsubmit="return confirm('Close this attendance session? Students will no longer be able to mark attendance.')">
+                        <button type="submit" class="btn btn-danger btn-block" style="margin-top: 0.5rem;">Close Session</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var expiresAt = {{ expires_at_ms }};
+var countdown = document.getElementById('countdown');
+var qrImage = document.getElementById('qrImage');
+var qrStatus = document.getElementById('qr-status');
+
+function updateCountdown() {
+    var remaining = Math.max(0, expiresAt - Date.now());
+    if (remaining === 0) {
+        countdown.innerHTML = '<strong>QR closed</strong>';
+        qrStatus.innerHTML = '<strong>This QR code is closed and can no longer be used.</strong>';
+        qrImage.style.opacity = '0.35';
+        return;
+    }
+    var totalSeconds = Math.floor(remaining / 1000);
+    var minutes = Math.floor(totalSeconds / 60);
+    var seconds = totalSeconds % 60;
+    countdown.innerHTML = 'QR closes in: <strong>' + minutes + ':' + String(seconds).padStart(2, '0') + '</strong>';
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+function copyToken() {
+    var token = document.getElementById('fullToken').value;
+    navigator.clipboard.writeText(token).then(function() {
+        alert('Token copied to clipboard!');
+    });
+}
+</script>
+{% endblock %}

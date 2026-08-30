@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Booking Management - Admin{% endblock %}
+{% block page_title %}Booking Management{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="card">
+        <div class="card-header">
+            <h2>All Room Bookings</h2>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="filter-bar">
+                <select name="status" class="form-select-sm">
+                    <option value="">All Status</option>
+                    {% for s in ['PENDING','APPROVED','REJECTED','CANCELLED','COMPLETED'] %}
+                    <option value="{{ s }}" {{ 'selected' if status_filter == s }}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+                <input type="date" name="date" value="{{ date_filter }}" class="form-input-sm">
+                <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+            </form>
+
+            {% if bookings %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr><th>ID</th><th>Room</th><th>Building</th><th>Date</th><th>Time</th><th>Purpose</th><th>By</th><th>Participants</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bookings %}
+                        <tr>
+                            <td>#{{ b.booking_id }}</td>
+                            <td>{{ b.room_number }}</td>
+                            <td>{{ b.building }}</td>
+                            <td>{{ b.booking_date|date_format }}</td>
+                            <td>{{ b.start_time }} - {{ b.end_time }}</td>
+                            <td class="text-sm">{{ b.purpose[:40] }}{% if b.purpose|length > 40 %}...{% endif %}</td>
+                            <td>{{ b.requested_by_name }}</td>
+                            <td>{{ b.num_participants }}</td>
+                            <td><span class="badge badge-{{ b.status|status_badge }}">{{ b.status }}</span></td>
+                            <td class="actions-cell">
+                                {% if b.status == 'PENDING' %}
+                                <form method="POST" action="{{ url_for('admin.booking_approve', booking_id=b.booking_id) }}" class="inline-form">
+                                    <button type="submit" class="btn btn-xs btn-success">Approve</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin.booking_reject', booking_id=b.booking_id) }}" class="inline-form" onsubmit="return confirm('Reject this booking?')">
+                                    <button type="submit" class="btn btn-xs btn-danger">Reject</button>
+                                </form>
+                                {% endif %}
+                                {% if b.status != 'CANCELLED' and b.status != 'COMPLETED' %}
+                                <form method="POST" action="{{ url_for('admin.booking_cancel', booking_id=b.booking_id) }}" class="inline-form" onsubmit="return confirm('Cancel this booking?')">
+                                    <button type="submit" class="btn btn-xs btn-warning">Cancel</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-info">Showing {{ bookings|length }} booking(s)</p>
+            {% else %}
+            <div class="empty-state">No bookings found.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

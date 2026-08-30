@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/teacher" class="nav-link active"> Dashboard</a>
+<a href="/teacher/attendance" class="nav-link"> Attendance</a>
+<a href="/teacher/timetable" class="nav-link"> Timetable</a>
+<a href="/teacher/od" class="nav-link"> OD Applications</a>
+<a href="/teacher/rooms" class="nav-link"> Rooms</a>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Teacher Dashboard</h1>
+  <a href="/teacher/attendance" class="btn btn-primary">+ Start Attendance</a>
+</div>
+<div class="stats-grid" id="statsGrid"><div class="loading">Loading...</div></div>
+<div class="grid-2col mt-6">
+  <div class="card"><h3>Today's Classes</h3><div id="timetable"><div class="loading">Loading...</div></div></div>
+  <div class="card"><h3>Active Sessions</h3><div id="sessions"><div class="loading">Loading...</div></div></div>
+  <div class="card"><h3>Pending OD Applications</h3><div id="pendingOD"><div class="loading">Loading...</div></div></div>
+  <div class="card"><h3>Device Violations</h3><div id="violations"><div class="loading">Loading...</div></div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function load() {
+  const d = await api('/api/dashboard/teacher');
+  if (!d) return;
+  document.getElementById('statsGrid').innerHTML = `
+    ${statC('', d.active_sessions?.length||0, 'Active Sessions', 'text-green')}
+    ${statC('', d.timetable?.length||0, "Today's Classes", 'text-brand')}
+    ${statC('', d.pending_od?.length||0, 'Pending OD', 'text-amber')}
+    ${statC('', d.violations?.length||0, 'Violations', 'text-red')}
+  `;
+  document.getElementById('timetable').innerHTML = d.timetable?.length ? d.timetable.map(t =>
+    `<div class="list-item"><div class="list-time">${t.start_time}-${t.end_time}</div><div><strong>${t.subject_name}</strong><br><small>${t.section_name} • ${t.room_name}</small></div></div>`
+  ).join('') : '<p class="empty">No classes today</p>';
+  document.getElementById('sessions').innerHTML = d.active_sessions?.length ? d.active_sessions.map(s =>
+    `<div class="list-item"><div><strong>${s.subject_name}</strong><small>${s.section_name}</small></div><span class="badge badge-green">Active</span></div>`
+  ).join('') : '<p class="empty">No active sessions</p>';
+  document.getElementById('pendingOD').innerHTML = d.pending_od?.length ? d.pending_od.map(o =>
+    `<div class="list-item"><div><strong>${o.first_name} ${o.last_name}</strong><small>${o.reason?.substring(0,60)}...</small></div><span class="badge badge-yellow">Pending</span></div>`
+  ).join('') : '<p class="empty">No pending OD</p>';
+  document.getElementById('violations').innerHTML = d.violations?.length ? d.violations.map(v =>
+    `<div class="list-item alert-item"><div><strong>${v.type?.replace(/_/g,' ')}</strong><small>${new Date(v.created_at).toLocaleString()}</small></div></div>`
+  ).join('') : '<p class="empty">No violations</p>';
+}
+function statC(icon, val, label, color) { return `<div class="stat-card"><div class="stat-icon">${icon}</div><div class="stat-value ${color}">${val}</div><div class="stat-label">${label}</div></div>`; }
+load();
+</script>
+{% endblock %}

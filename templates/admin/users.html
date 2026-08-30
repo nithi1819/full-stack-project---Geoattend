@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}User Management - Admin{% endblock %}
+{% block page_title %}User Management{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="card">
+        <div class="card-header">
+            <h2>Users</h2>
+            <a href="{{ url_for('admin.user_create') }}" class="btn btn-primary">+ Create User</a>
+        </div>
+        <div class="card-body">
+            <!-- Filters -->
+            <form method="GET" class="filter-bar">
+                <input type="text" name="search" placeholder="Search name, username, email..." value="{{ search }}" class="form-input-sm">
+                <select name="role" class="form-select-sm">
+                    <option value="">All Roles</option>
+                    {% for r in roles %}
+                    <option value="{{ r.role_name }}" {{ 'selected' if role_filter == r.role_name }}>{{ r.role_name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="status" class="form-select-sm">
+                    <option value="">All Status</option>
+                    <option value="ACTIVE" {{ 'selected' if status_filter == 'ACTIVE' }}>Active</option>
+                    <option value="INACTIVE" {{ 'selected' if status_filter == 'INACTIVE' }}>Inactive</option>
+                    <option value="SUSPENDED" {{ 'selected' if status_filter == 'SUSPENDED' }}>Suspended</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+            </form>
+
+            <!-- Users Table -->
+            {% if users %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>{{ u.user_id }}</td>
+                            <td>{{ u.full_name }}</td>
+                            <td>{{ u.username }}</td>
+                            <td>{{ u.email }}</td>
+                            <td><span class="badge badge-{{ 'primary' if u.role_name=='ADMIN' else 'success' if u.role_name=='FACULTY' else 'warning' if u.role_name=='REPRESENTATIVE' else 'info' }}">{{ u.role_name }}</span></td>
+                            <td>{{ u.department_name or '-' }}</td>
+                            <td><span class="badge badge-{{ u.user_status|status_badge }}">{{ u.user_status }}</span></td>
+                            <td class="actions-cell">
+                                <a href="{{ url_for('admin.user_edit', user_id=u.user_id) }}" class="btn btn-xs btn-secondary">Edit</a>
+                                {% if u.user_status == 'ACTIVE' %}
+                                <form method="POST" action="{{ url_for('admin.user_deactivate', user_id=u.user_id) }}" class="inline-form" onsubmit="return confirm('Deactivate this user?')">
+                                    <button type="submit" class="btn btn-xs btn-danger">Deactivate</button>
+                                </form>
+                                {% else %}
+                                <form method="POST" action="{{ url_for('admin.user_activate', user_id=u.user_id) }}" class="inline-form">
+                                    <button type="submit" class="btn btn-xs btn-success">Activate</button>
+                                </form>
+                                {% endif %}
+                                <form method="POST" action="{{ url_for('admin.user_reset_password', user_id=u.user_id) }}" class="inline-form" onsubmit="return confirm('Reset password to Reset@123?')">
+                                    <button type="submit" class="btn btn-xs btn-warning">Reset Pwd</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-info">Showing {{ users|length }} user(s)</p>
+            {% else %}
+            <div class="empty-state">No users found matching your criteria.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

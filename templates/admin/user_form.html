@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if user else 'Create' }} User - Admin{% endblock %}
+{% block page_title %}{{ 'Edit User' if user else 'Create User' }}{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="card" style="max-width: 800px;">
+        <div class="card-header">
+            <h2>{{ 'Edit User' if user else 'Create New User' }}</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST" class="form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="full_name">Full Name *</label>
+                        <input type="text" id="full_name" name="full_name" required value="{{ (form.get('full_name', '') if form else '') or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required value="{{ (form.get('email', '') if form else '') or '' }}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="username">Username {{ '*' if not user else '' }}</label>
+                        <input type="text" id="username" name="username" {{ 'required' if not user }} value="{{ (form.get('username', '') if form else '') or '' }}" {{ 'readonly' if user }}>
+                    </div>
+                    <div class="form-group">
+                        <label for="role_id">Role *</label>
+                        <select id="role_id" name="role_id" required>
+                            {% for r in roles %}
+                            <option value="{{ r.role_id }}" {{ 'selected' if (form.get('role_id')|int if form and form.get('role_id') else 0) == r.role_id }}>{{ r.role_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% if not user %}
+                <div class="form-group">
+                    <label for="password">Password (default: Admin@123)</label>
+                    <input type="password" id="password" name="password" value="Admin@123">
+                </div>
+                {% endif %}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="department_id">Department</label>
+                        <select id="department_id" name="department_id">
+                            <option value="">-- None --</option>
+                            {% for d in departments %}
+                            <option value="{{ d.department_id }}" {{ 'selected' if (form.get('department_id')|int if form and form.get('department_id') else 0) == d.department_id }}>{{ d.department_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone</label>
+                        <input type="tel" id="phone" name="phone" value="{{ (form.get('phone', '') if form else '') or '' }}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <div id="employee-id-group">
+                            <label for="employee_id">Employee/Staff ID *</label>
+                            <input type="text" id="employee_id" name="employee_id" value="{{ (form.get('employee_id', '') if form else '') or '' }}">
+                        </div>
+                        <div id="student-id-group" style="display: none;">
+                            <label for="student_number">Student ID *</label>
+                            <input type="text" id="student_number" name="student_number" value="{{ (form.get('student_number', '') if form else '') or '' }}">
+                        </div>
+                    </div>
+                    {% if user %}
+                    <div class="form-group">
+                        <label for="user_status">Status</label>
+                        <select id="user_status" name="user_status">
+                            <option value="ACTIVE" {{ 'selected' if (form.get('user_status', '') if form else '') == 'ACTIVE' }}>Active</option>
+                            <option value="INACTIVE" {{ 'selected' if (form.get('user_status', '') if form else '') == 'INACTIVE' }}>Inactive</option>
+                            <option value="SUSPENDED" {{ 'selected' if (form.get('user_status', '') if form else '') == 'SUSPENDED' }}>Suspended</option>
+                        </select>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">{{ 'Update User' if user else 'Create User' }}</button>
+                    <a href="{{ url_for('admin.users_list') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+function updateRoleFields() {
+    var role = document.getElementById('role_id');
+    var selected = role.options[role.selectedIndex];
+    var isStudent = selected && selected.text.trim() === 'STUDENT';
+    document.getElementById('student-id-group').style.display = isStudent ? 'block' : 'none';
+    document.getElementById('employee-id-group').style.display = isStudent ? 'none' : 'block';
+    document.getElementById('student_number').required = isStudent;
+    document.getElementById('employee_id').required = !isStudent;
+}
+document.getElementById('role_id').addEventListener('change', updateRoleFields);
+updateRoleFields();
+</script>
+{% endblock %}

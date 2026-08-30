@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Book Room - Student{% endblock %}
+{% block page_title %}Book a Room{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="card" style="max-width: 700px;">
+        <div class="card-header"><h2>Room Booking Request</h2></div>
+        <div class="card-body">
+            <form method="POST" class="form">
+                <div class="form-group">
+                    <label for="room_id">Select Room *</label>
+                    <select id="room_id" name="room_id" required>
+                        <option value="">-- Select Room --</option>
+                        {% for r in rooms %}
+                        <option value="{{ r.room_id }}" {{ 'selected' if (form.get('room_id')|int if form and form.get('room_id') else 0) == r.room_id }}>
+                            {{ r.room_number }} - {{ r.building }} ({{ r.room_type }}, Cap: {{ r.capacity }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="booking_date">Booking Date *</label>
+                    <input type="date" id="booking_date" name="booking_date" required value="{{ form.get('booking_date', '') if form else '' }}">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="start_time">Start Time *</label>
+                        <input type="time" id="start_time" name="start_time" required value="{{ form.get('start_time', '') if form else '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="end_time">End Time *</label>
+                        <input type="time" id="end_time" name="end_time" required value="{{ form.get('end_time', '') if form else '' }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="num_participants">Number of Participants *</label>
+                    <input type="number" id="num_participants" name="num_participants" min="1" required value="{{ form.get('num_participants', '1') if form else '1' }}">
+                </div>
+                <div class="form-group">
+                    <label for="purpose">Purpose *</label>
+                    <textarea id="purpose" name="purpose" rows="3" required placeholder="Purpose of booking...">{{ form.get('purpose', '') if form else '' }}</textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Submit Booking Request</button>
+                    <a href="{{ url_for('student.bookings_list') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

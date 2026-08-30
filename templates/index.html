@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}QR Attendance System{% endblock %}
+
+{% block public_content %}
+<div class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <span class="logo-icon-xl"></span>
+                    <h1>QR Attend</h1>
+                    <p>Attendance, Room Booking & Facility Complaints Management System</p>
+                </div>
+            </div>
+            <div class="auth-body" style="text-align: center;">
+                {% if current_user %}
+                <p>Welcome back, <strong>{{ current_user.full_name }}</strong>!</p>
+                <a href="{{ redirect_url }}" class="btn btn-primary btn-block">Go to Dashboard</a>
+                {% else %}
+                <p>Manage attendance, book rooms, and submit facility complaints — all in one place.</p>
+                <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center;">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Sign In</a>
+                    <a href="{{ url_for('auth.signup') }}" class="btn btn-secondary">Sign Up</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

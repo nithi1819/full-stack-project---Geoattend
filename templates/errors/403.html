@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Access Denied{% endblock %}
+{% block public_content %}
+<div class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-body" style="text-align: center; padding: 3rem;">
+                <h1 style="font-size: 4rem; margin: 0;"></h1>
+                <h2>403 - Access Denied</h2>
+                <p>You don't have permission to access this page.</p>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary" style="margin-top: 1rem;">Go to Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

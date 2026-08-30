@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Sign Up - QR Attendance System{% endblock %}
+
+{% block public_content %}
+<div class="auth-page">
+    <div class="auth-container auth-container-wide">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <span class="logo-icon-lg"></span>
+                    <h1>QR Attend</h1>
+                    <p>Create a Student Account</p>
+                </div>
+            </div>
+
+            <div class="auth-body">
+                <h2>Student Registration</h2>
+
+                <form method="POST" action="{{ url_for('auth.signup') }}" class="auth-form" id="signupForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="full_name">Full Name *</label>
+                            <input type="text" id="full_name" name="full_name" required
+                                   value="{{ form.get('full_name', '') if form else '' }}"
+                                   placeholder="John Doe" minlength="2">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email *</label>
+                            <input type="email" id="email" name="email" required
+                                   value="{{ form.get('email', '') if form else '' }}"
+                                   placeholder="john@college.edu">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="username">Username *</label>
+                            <input type="text" id="username" name="username" required
+                                   value="{{ form.get('username', '') if form else '' }}"
+                                   placeholder="johndoe" minlength="3" pattern="[a-zA-Z0-9_]+">
+                        </div>
+                        <div class="form-group">
+                            <label for="student_number">Student Number *</label>
+                            <input type="text" id="student_number" name="student_number" required
+                                   value="{{ form.get('student_number', '') if form else '' }}"
+                                   placeholder="STU001">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="password">Password *</label>
+                            <input type="password" id="password" name="password" required
+                                   placeholder="Min 8 chars, A-Z, a-z, 0-9, special" minlength="8">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm_password">Confirm Password *</label>
+                            <input type="password" id="confirm_password" name="confirm_password" required
+                                   placeholder="Re-enter password">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="department_id">Department</label>
+                            <select id="department_id" name="department_id">
+                                <option value="">-- Select Department --</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept.department_id }}"
+                                    {{ 'selected' if (form.get('department_id')|int if form and form.get('department_id') else 0) == dept.department_id }}>
+                                    {{ dept.department_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone</label>
+                            <input type="tel" id="phone" name="phone"
+                                   value="{{ form.get('phone', '') if form else '' }}"
+                                   placeholder="555-0123">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="program">Program *</label>
+                            <input type="text" id="program" name="program" required
+                                   value="{{ form.get('program', '') if form else '' }}"
+                                   placeholder="e.g., Computer Science">
+                        </div>
+                        <div class="form-group">
+                            <label for="year_level">Year Level</label>
+                            <select id="year_level" name="year_level">
+                                <option value="1">1st Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="4">4th Year</option>
+                                <option value="5">5th Year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="enrollment_year">Enrollment Year</label>
+                        <input type="number" id="enrollment_year" name="enrollment_year"
+                               value="{{ form.get('enrollment_year', '2025') if form else '2025' }}"
+                               min="2000" max="2030">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Already have an account? <a href="{{ url_for('auth.login') }}">Sign In</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

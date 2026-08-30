@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}My Sessions - Faculty{% endblock %}
+{% block page_title %}My Attendance Sessions{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="card">
+        <div class="card-header">
+            <h2>Attendance Sessions</h2>
+            <a href="{{ url_for('faculty.session_create') }}" class="btn btn-primary">+ Create Session</a>
+        </div>
+        <div class="card-body">
+            {% if sessions %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>ID</th><th>Class</th><th>Course</th><th>Date</th><th>Time</th><th>Expiry</th><th>Marked</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        {% for s in sessions %}
+                        <tr>
+                            <td>#{{ s.session_id }}</td>
+                            <td>{{ s.class_name }}</td>
+                            <td>{{ s.course_name or '-' }}</td>
+                            <td>{{ s.session_date|date_format }}</td>
+                            <td>{{ s.start_time }} - {{ s.end_time }}</td>
+                            <td>{{ s.qr_expiry_minutes }} min</td>
+                            <td>{{ s.marked_count }}</td>
+                            <td><span class="badge badge-{{ 'success' if s.is_active else 'secondary' }}">{{ 'Active' if s.is_active else 'Closed' }}</span></td>
+                            <td class="actions-cell">
+                                {% if s.is_active %}
+                                <a href="{{ url_for('faculty.session_qr', session_id=s.session_id) }}" class="btn btn-xs btn-primary">Show QR</a>
+                                <form method="POST" action="{{ url_for('faculty.session_close', session_id=s.session_id) }}" class="inline-form" onsubmit="return confirm('Close this session?')">
+                                    <button type="submit" class="btn btn-xs btn-warning">Close</button>
+                                </form>
+                                {% endif %}
+                                <a href="{{ url_for('faculty.session_records', session_id=s.session_id) }}" class="btn btn-xs btn-secondary">Records</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">No sessions yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

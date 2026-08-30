@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/admin" class="nav-link active"> Dashboard</a>
+<a href="/admin/attendance" class="nav-link"> Attendance</a>
+<a href="/admin/timetable" class="nav-link"> Timetable</a>
+<a href="/admin/rooms" class="nav-link"> Rooms</a>
+<a href="/admin/od" class="nav-link"> OD Applications</a>
+<a href="/admin/complaints" class="nav-link"> Complaints</a>
+<a href="/admin/calendar" class="nav-link"> Calendar</a>
+<a href="/admin/users" class="nav-link"> Users</a>
+<a href="/admin/devices" class="nav-link"> Devices</a>
+<a href="/admin/reports" class="nav-link"> Reports</a>
+<a href="/admin/audit-logs" class="nav-link"> Audit Logs</a>
+<a href="/admin/settings" class="nav-link"> Settings</a>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Admin Dashboard</h1>
+  <p class="text-muted">Overview of CampusHub platform</p>
+</div>
+<div class="quick-actions" id="quickActions"></div>
+<div class="stats-grid" id="statsGrid"><div class="loading">Loading...</div></div>
+<div class="grid-2col mt-6">
+  <div class="card"><h3>Platform Overview</h3><div id="overview"><div class="loading">Loading...</div></div></div>
+  <div class="card"><h3>Attention Needed</h3><div id="attention"><div class="loading">Loading...</div></div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function loadDashboard() {
+  const d = await api('/api/dashboard/stats');
+  if (!d) return;
+  document.getElementById('statsGrid').innerHTML = `
+    ${statCard('', d.totalStudents, 'Students', 'text-green')}
+    ${statCard('', d.totalTeachers, 'Teachers', 'text-indigo')}
+    ${statCard('', d.todaySessions, 'Today Sessions', 'text-brand')}
+    ${statCard('', d.activeQrSessions, 'Active QR', 'text-orange')}
+    ${statCard('', d.attendancePercentage + '%', 'Attendance', d.attendancePercentage >= 75 ? 'text-green' : 'text-red')}
+    ${statCard('', d.pendingOD, 'Pending OD', 'text-amber')}
+    ${statCard('', d.openComplaints, 'Open Complaints', 'text-red')}
+    ${statCard('', d.totalRooms, 'Rooms', 'text-purple')}
+    ${statCard('', d.deviceViolations, 'Violations', 'text-red')}
+  `;
+  document.getElementById('quickActions').innerHTML = `
+    <a href="/admin/users" class="quick-action"><span></span>Manage Users</a>
+    <a href="/admin/attendance" class="quick-action"><span></span>Start Attendance</a>
+    <a href="/admin/timetable" class="quick-action"><span></span>Timetable</a>
+    <a href="/admin/rooms" class="quick-action"><span></span>Rooms</a>
+    <a href="/admin/audit-logs" class="quick-action"><span></span>Audit Logs</a>
+    <a href="/admin/settings" class="quick-action"><span></span>Settings</a>
+  `;
+  document.getElementById('overview').innerHTML = kvList([
+    ['Total Attendance Sessions', '—'],['Active QR Sessions', d.activeQrSessions],
+    ['Today Sessions', d.todaySessions],['System Health', '<span class="text-green">Operational</span>']
+  ]);
+  document.getElementById('attention').innerHTML = kvList([
+    ['Pending OD', `<span class="text-amber">${d.pendingOD}</span>`],
+    ['Open Complaints', `<span class="text-red">${d.openComplaints}</span>`],
+    ['Device Violations', `<span class="text-red">${d.deviceViolations}</span>`],
+  ]);
+}
+function statCard(icon, value, label, color) {
+  return `<div class="stat-card"><div class="stat-icon">${icon}</div><div class="stat-value ${color}">${value}</div><div class="stat-label">${label}</div></div>`;
+}
+function kvList(items) {
+  return items.map(([k,v]) => `<div class="kv-row"><span>${k}</span><span>${v}</span></div>`).join('');
+}
+loadDashboard();
+</script>
+{% endblock %}

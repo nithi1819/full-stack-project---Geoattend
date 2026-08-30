@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/{{user.role|lower}}" class="nav-link"> Dashboard</a>
+<a href="/{{user.role|lower}}/timetable" class="nav-link active"> Timetable</a>
+{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Timetable</h1></div>
+<div id="timetable"><div class="loading">Loading...</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const DAYS = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY'];
+const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri'];
+async function load() {
+  const role = '{{user.role}}';
+  let entries = [];
+  if (role === 'STUDENT' || role === 'REP') entries = await api('/api/timetable/student');
+  else if (role === 'TEACHER') entries = await api('/api/timetable/teacher');
+  else entries = await api('/api/timetable/all');
+  let html = '<div class="timetable-grid">';
+  DAYS.forEach((day, i) => {
+    html += `<div class="timetable-day"><div class="timetable-day-header">${DAY_LABELS[i]}</div>`;
+    const dayEntries = entries.filter(e => e.day_of_week === day).sort((a,b) => a.start_time.localeCompare(b.start_time));
+    if (dayEntries.length === 0) html += '<p class="empty small">—</p>';
+    dayEntries.forEach(e => {
+      html += `<div class="timetable-slot"><strong>${e.subject_name}</strong><small>${e.start_time}-${e.end_time}</small><small>${e.room_name}</small>${e.teacher_first?`<small>${e.teacher_first} ${e.teacher_last||''}</small>`:''}${e.section_name?`<small>${e.section_name}</small>`:''}</div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  document.getElementById('timetable').innerHTML = html;
+}
+load();
+</script>
+{% endblock %}

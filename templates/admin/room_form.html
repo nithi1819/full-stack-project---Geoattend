@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if room else 'Add' }} Room - Admin{% endblock %}
+{% block page_title %}{{ 'Edit Room' if room else 'Add Room' }}{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="card" style="max-width: 700px;">
+        <div class="card-header">
+            <h2>{{ 'Edit Room' if room else 'Add New Room' }}</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST" class="form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="room_number">Room Number *</label>
+                        <input type="text" id="room_number" name="room_number" required value="{{ (form.get('room_number', '') if form else '') or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="building">Building *</label>
+                        <input type="text" id="building" name="building" required value="{{ (form.get('building', '') if form else '') or '' }}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="floor">Floor</label>
+                        <input type="number" id="floor" name="floor" value="{{ (form.get('floor', 0) if form else 0) or 0 }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="room_type">Room Type *</label>
+                        <select id="room_type" name="room_type" required>
+                            <option value="">-- Select --</option>
+                            {% for t in ['Classroom','Seminar Hall','Lab','Conference Room','Auditorium'] %}
+                            <option value="{{ t }}" {{ 'selected' if (form.get('room_type', '') if form else '') == t }}>{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="capacity">Capacity *</label>
+                        <input type="number" id="capacity" name="capacity" required min="1" value="{{ (form.get('capacity', 30) if form else 30) or 30 }}">
+                    </div>
+                    {% if room %}
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="is_active" value="1" {{ 'checked' if (form.get('is_active', 1) if form else 1) }}>
+                            Active
+                        </label>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="facilities">Facilities</label>
+                    <textarea id="facilities" name="facilities" rows="3" placeholder="e.g., Projector, Whiteboard, AC">{{ (form.get('facilities', '') if form else '') or '' }}</textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">{{ 'Update Room' if room else 'Add Room' }}</button>
+                    <a href="{{ url_for('admin.rooms_list') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Submit Complaint - Student{% endblock %}
+{% block page_title %}Submit Facility Complaint{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="card" style="max-width: 700px;">
+        <div class="card-header"><h2>New Complaint</h2></div>
+        <div class="card-body">
+            <form method="POST" class="form">
+                <div class="form-group">
+                    <label for="room_id">Related Room/Facility</label>
+                    <select id="room_id" name="room_id">
+                        <option value="">-- Optional: Select Room --</option>
+                        {% for r in rooms %}
+                        <option value="{{ r.room_id }}" {{ 'selected' if (form.get('room_id')|int if form and form.get('room_id') else 0) == r.room_id }}>
+                            {{ r.room_number }} - {{ r.building }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="category">Category *</label>
+                        <select id="category" name="category" required>
+                            <option value="">-- Select --</option>
+                            {% for c in ['Electrical','Plumbing','Furniture','Air Conditioning','Internet','Cleaning','Equipment','Other'] %}
+                            <option value="{{ c }}" {{ 'selected' if form.get('category', '') == c }}>{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="priority">Priority *</label>
+                        <select id="priority" name="priority" required>
+                            {% for p in ['LOW','MEDIUM','HIGH','URGENT'] %}
+                            <option value="{{ p }}" {{ 'selected' if (form.get('priority', 'MEDIUM')) == p }}>{{ p }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="title">Title *</label>
+                    <input type="text" id="title" name="title" required value="{{ form.get('title', '') if form else '' }}" placeholder="Brief description">
+                </div>
+                <div class="form-group">
+                    <label for="description">Description *</label>
+                    <textarea id="description" name="description" rows="5" required placeholder="Detailed description...">{{ form.get('description', '') if form else '' }}</textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Submit Complaint</button>
+                    <a href="{{ url_for('student.complaints_list') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

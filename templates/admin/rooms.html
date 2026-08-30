@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Room Management - Admin{% endblock %}
+{% block page_title %}Room Management{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="card">
+        <div class="card-header">
+            <h2>Rooms</h2>
+            <a href="{{ url_for('admin.room_create') }}" class="btn btn-primary">+ Add Room</a>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="filter-bar">
+                <input type="text" name="search" placeholder="Search room number, building..." value="{{ search }}" class="form-input-sm">
+                <select name="type" class="form-select-sm">
+                    <option value="">All Types</option>
+                    {% for t in ['Classroom','Seminar Hall','Lab','Conference Room','Auditorium'] %}
+                    <option value="{{ t }}" {{ 'selected' if type_filter == t }}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+            </form>
+
+            {% if rooms %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr><th>Room #</th><th>Building</th><th>Floor</th><th>Type</th><th>Capacity</th><th>Facilities</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for r in rooms %}
+                        <tr>
+                            <td><strong>{{ r.room_number }}</strong></td>
+                            <td>{{ r.building }}</td>
+                            <td>{{ r.floor }}</td>
+                            <td>{{ r.room_type }}</td>
+                            <td>{{ r.capacity }}</td>
+                            <td class="text-sm">{{ r.facilities or '-' }}</td>
+                            <td><span class="badge badge-{{ 'success' if r.is_active else 'danger' }}">{{ 'Active' if r.is_active else 'Inactive' }}</span></td>
+                            <td class="actions-cell">
+                                <a href="{{ url_for('admin.room_edit', room_id=r.room_id) }}" class="btn btn-xs btn-secondary">Edit</a>
+                                {% if r.is_active %}
+                                <form method="POST" action="{{ url_for('admin.room_deactivate', room_id=r.room_id) }}" class="inline-form" onsubmit="return confirm('Deactivate this room?')">
+                                    <button type="submit" class="btn btn-xs btn-danger">Deactivate</button>
+                                </form>
+                                {% else %}
+                                <form method="POST" action="{{ url_for('admin.room_activate', room_id=r.room_id) }}" class="inline-form">
+                                    <button type="submit" class="btn btn-xs btn-success">Activate</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-info">Showing {{ rooms|length }} room(s)</p>
+            {% else %}
+            <div class="empty-state">No rooms found.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

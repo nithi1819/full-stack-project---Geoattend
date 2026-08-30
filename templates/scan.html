@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/student" class="nav-link"> Dashboard</a>
+<a href="/student/scan" class="nav-link active highlight"> Scan Attendance</a>
+<a href="/student/timetable" class="nav-link"> Timetable</a>
+<a href="/student/od" class="nav-link"> OD</a>
+<a href="/student/rooms" class="nav-link"> Rooms</a>
+<a href="/student/complaints" class="nav-link"> Complaints</a>
+<a href="/student/devices" class="nav-link"> Device</a>
+{% endblock %}
+{% block content %}
+<div class="page-header center"><h1>Scan Attendance</h1><p class="text-muted">Point camera at QR or paste token manually</p></div>
+<div id="alertBox"></div>
+<div id="deviceSection"></div>
+<div class="card mb-6" id="scannerArea" style="display:none">
+  <div id="scanner" style="width:100%;max-width:400px;margin:0 auto"></div>
+  <button class="btn btn-primary mt-4" id="scanBtn" onclick="startScan()"> Start Camera Scanner</button>
+</div>
+<div class="card" id="manualSection" style="display:none">
+  <h3>Or paste QR code token</h3>
+  <div class="form-row"><input type="text" id="qrInput" class="form-control" placeholder="Paste QR token here"><button class="btn btn-primary" onclick="submitManual()">Submit</button></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let scannerActive = false;
+const deviceId = localStorage.getItem('campushub_device_id');
+async function init() {
+  const devices = await api('/api/devices/mine');
+  const active = devices?.find(d => d.status === 'ACTIVE');
+  if (active) {
+    document.getElementById('scannerArea').style.display = 'block';
+    document.getElementById('manualSection').style.display = 'block';
+  } else {
+    document.getElementById('deviceSection').innerHTML = `<div class="card center"><div class="icon-large"></div><h3>Register Your Device</h3><p class="text-muted">You need to register this device before scanning attendance.</p><button class="btn btn-primary mt-4" onclick="registerDevice()">Register This Device</button></div>`;
+  }
+}
+async function registerDevice() {
+  const res = await api('/api/devices/register', 'POST', { device_name: navigator.platform + ' Browser', platform: navigator.platform, browser: navigator.userAgent.includes('Chrome')?'Chrome':'Other' });
+  if (res?.error) { alert(res.error); return; }
+  if (res?.device) localStorage.setItem('campushub_device_id', res.device.device_id);
+  init();
+}
+async function startScan() {
+  if (scannerActive) return;
+  try {
+    const {Html5Qrcode} = await import('https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.mjs');
+    const scanner = new Html5Qrcode('scanner');
+    scannerActive = true;
+    document.getElementById('scanBtn').textContent = ' Stop Scanner';
+    document.getElementById('scanBtn').onclick = () => { scanner.stop(); scannerActive = false; document.getElementById('scanBtn').textContent=' Start Camera Scanner'; };
+    await scanner.start({facingMode:'environment'}, {fps:10,qrbox:{width:250,height:250}},
+      async text => { try{await scanner.stop();}catch(e){} submitScan(text); });
+  } catch(e) {
+    document.getElementById('alertBox').innerHTML = '<div class="alert alert-warning">Camera unavailable. Use manual input below.</div>';
+  }
+}
+async function submitScan(qrToken) {
+  const did = localStorage.getItem('campushub_device_id');
+  if (!did) { alert('Please register your device first'); return; }
+  const res = await api('/api/attendance/scan', 'POST', {qr_token: qrToken, device_id: did});
+  if (res?.error) { document.getElementById('alertBox').innerHTML = `<div class="alert alert-error"> ${res.error}</div>`; }
+  else { document.getElementById('alertBox').innerHTML = '<div class="alert alert-success"> Attendance recorded!</div>'; }
+}
+async function submitManual() {
+  const token = document.getElementById('qrInput').value.trim();
+  if (!token) return;
+  const did = localStorage.getItem('campushub_device_id');
+  if (!did) { alert('Please register your device first'); return; }
+  const res = await api('/api/attendance/scan', 'POST', {qr_token: token, device_id: did});
+  if (res?.error) { document.getElementById('alertBox').innerHTML = `<div class="alert alert-error"> ${res.error}</div>`; }
+  else { document.getElementById('alertBox').innerHTML = '<div class="alert alert-success"> Attendance recorded!</div>'; document.getElementById('qrInput').value = ''; }
+}
+init();
+</script>
+{% endblock %}

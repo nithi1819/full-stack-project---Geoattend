@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/{{user.role|lower}}" class="nav-link"> Dashboard</a>
+<a href="/{{user.role|lower}}/attendance" class="nav-link active"> Attendance</a>
+{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Attendance Sessions</h1></div>
+<div id="activeSession"></div>
+{% if user.role in ('TEACHER','ADMIN') %}
+<div class="card mb-6" id="createForm" style="display:none"><h3>Start New Session</h3>
+  <div class="form-row">
+    <div class="form-group"><label>Subject</label><select id="fSubject" class="form-control"></select></div>
+    <div class="form-group"><label>Section</label><select id="fSection" class="form-control"></select></div>
+    <div class="form-group"><label>Duration (min)</label><input type="number" id="fDuration" value="10" class="form-control"></div>
+  </div>
+  <button class="btn btn-primary" onclick="createSession()">▶ Start Session</button>
+</div>
+{% endif %}
+<div class="card"><h3>Session History</h3><div id="sessions"><div class="loading">Loading...</div></div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+let currentSession = null;
+async function loadSessions() {
+  const sessions = await api('/api/attendance/sessions');
+  const active = sessions.find(s => s.status === 'ACTIVE');
+  currentSession = active;
+  const isTeacher = '{{user.role}}' === 'TEACHER' || '{{user.role}}' === 'ADMIN';
+  if (active) {
+    document.getElementById('activeSession').innerHTML = `
+      <div class="active-session-banner"><div class="pulse-dot"></div><div><h2>Active Session</h2><p>${active.subject_name} — ${active.section_name}</p></div>
+      <div class="btn-group"><button class="btn btn-secondary" onclick="rotateQR('${active.id}')"> Rotate QR</button>
+      <button class="btn btn-danger" onclick="stopSession('${active.id}')"> Stop</button></div></div>
+      <div class="grid-2col mb-6"><div class="card center"><div id="qrDisplay" class="qr-box"><div class="loading">Loading QR...</div></div><p class="text-sm text-muted mt-2">Students scan this to mark attendance</p></div>
+      <div class="card"><div id="liveStats"></div><div id="scannedList" class="mt-4" style="max-height:300px;overflow-y:auto"></div></div></div>`;
+    await loadQR(active.id);
+    await loadSessionDetail(active.id);
+  } else if (isTeacher) {
+    document.getElementById('activeSession').innerHTML = '';
+    document.getElementById('createForm').style.display = 'block';
+    await loadFormOptions();
+  }
+  document.getElementById('sessions').innerHTML = sessions.length ? `<table class="table"><thead><tr><th>Subject</th><th>Section</th><th>Date</th><th>Time</th><th>Status</th><th>Scans</th></tr></thead><tbody>${sessions.map(s => `<tr><td>${s.subject_name}</td><td>${s.section_name}</td><td>${s.date?.split('T')[0]||''}</td><td>${s.start_time}</td><td><span class="badge badge-${s.status==='ACTIVE'?'green':'gray'}">${s.status}</span></td><td>${s.scan_count||0}</td></tr>`).join('')}</tbody></table>` : '<p class="empty">No sessions yet</p>';
+}
+async function loadQR(sid) {
+  const d = await api(`/api/attendance/sessions/${sid}/qr`);
+  if (d?.qr_token) {
+    document.getElementById('qrDisplay').innerHTML = `<pre class="qr-text">${d.qr_token.substring(0,50)}...</pre><p class="text-xs text-muted">QR Token (auto-rotates)</p>`;
+  }
+}
+async function loadSessionDetail(sid) {
+  const d = await api(`/api/attendance/sessions/${sid}`);
+  if (!d) return;
+  const atts = d.attendances || [];
+  const present = atts.filter(a => a.status === 'PRESENT').length;
+  const absent = atts.filter(a => a.status === 'ABSENT').length;
+  document.getElementById('liveStats').innerHTML = `<div class="stats-grid compact"><div class="stat-mini"><strong class="text-green">${present}</strong><small>Present</small></div><div class="stat-mini"><strong class="text-red">${absent}</strong><small>Absent</small></div><div class="stat-mini"><strong class="text-brand">${atts.length}</strong><small>Scans</small></div></div>`;
+  document.getElementById('scannedList').innerHTML = atts.length ? atts.map(a => `<div class="list-item small"><span>${a.status==='PRESENT'?'':''} ${a.first_name} ${a.last_name}</span><small>${a.scan_time ? new Date(a.scan_time).toLocaleTimeString() : a.is_manual?'Manual':''}</small></div>`).join('') : '<p class="empty">No scans yet</p>';
+}
+async function createSession() {
+  const body = { subject_id: document.getElementById('fSubject').value, section_id: document.getElementById('fSection').value, duration: parseInt(document.getElementById('fDuration').value) };
+  const res = await api('/api/attendance/sessions', 'POST', body);
+  if (res?.error) { alert(res.error); return; }
+  loadSessions();
+}
+async function stopSession(sid) {
+  if (!confirm('Stop session? Students who haven\'t scanned will be marked absent.')) return;
+  await api(`/api/attendance/sessions/${sid}/stop`, 'POST');
+  loadSessions();
+}
+async function rotateQR(sid) {
+  const res = await api(`/api/attendance/sessions/${sid}/rotate-qr`, 'POST');
+  if (res?.qr_token) document.getElementById('qrDisplay').innerHTML = `<pre class="qr-text">${res.qr_token.substring(0,50)}...</pre>`;
+}
+async function loadFormOptions() {
+  const [subjects, sections] = await Promise.all([api('/api/subjects'), api('/api/sections')]);
+  document.getElementById('fSubject').innerHTML = subjects.map(s => `<option value="${s.id}">${s.name} (${s.code})</option>`).join('');
+  document.getElementById('fSection').innerHTML = sections.map(s => `<option value="${s.id}">${s.dept_code}-${s.name}</option>`).join('');
+}
+loadSessions();
+</script>
+{% endblock %}

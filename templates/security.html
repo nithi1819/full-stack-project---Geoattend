@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/security" class="nav-link active"> Security Dashboard</a>
+{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Security Dashboard</h1><p class="text-muted">Monitor device activity and events</p></div>
+<div class="stats-grid" id="stats"><div class="loading">Loading...</div></div>
+<div class="grid-2col mt-6">
+  <div class="card"><h3>Security Events</h3><div id="events"><div class="loading">Loading...</div></div></div>
+  <div class="card"><h3>Active Room Bookings</h3><div id="bookings"><div class="loading">Loading...</div></div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function load() {
+  const d = await api('/api/dashboard/security');
+  if (!d) return;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card center"><div class="stat-value text-red">${(d.events||[]).length}</div><div class="stat-label">Security Events</div></div>
+    <div class="stat-card center"><div class="stat-value text-green">${(d.bookings||[]).length}</div><div class="stat-label">Active Bookings</div></div>
+  `;
+  document.getElementById('events').innerHTML = (d.events||[]).length ? d.events.map(e =>
+    `<div class="list-item alert-item"><div><strong>${e.type?.replace(/_/g,' ')}</strong><small>Device: ${e.device_id?.substring(0,8)}... | ${new Date(e.created_at).toLocaleString()}</small></div><span class="badge badge-${e.result==='BLOCKED'?'red':'yellow'}">${e.result}</span></div>`
+  ).join('') : '<p class="empty">No security events</p>';
+  document.getElementById('bookings').innerHTML = (d.bookings||[]).length ? d.bookings.map(b =>
+    `<div class="list-item"><div><strong>${b.room_name}</strong><small>${b.purpose} | ${b.start_time}-${b.end_time}</small></div><span class="badge badge-green">Active</span></div>`
+  ).join('') : '<p class="empty">No active bookings</p>';
+}
+load();
+</script>
+{% endblock %}

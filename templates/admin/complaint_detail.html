@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Complaint #{{ complaint.complaint_id }} - Admin{% endblock %}
+{% block page_title %}Complaint #{{ complaint.complaint_id }}{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="grid-2">
+        <!-- Complaint Info -->
+        <div class="card">
+            <div class="card-header">
+                <h2>{{ complaint.title }}</h2>
+                <a href="{{ url_for('admin.complaints_list') }}" class="btn btn-sm btn-secondary">← Back</a>
+            </div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item"><label>Category</label><span>{{ complaint.category }}</span></div>
+                    <div class="info-item"><label>Priority</label><span class="badge badge-{{ complaint.priority|status_badge }}">{{ complaint.priority }}</span></div>
+                    <div class="info-item"><label>Status</label><span class="badge badge-{{ complaint.status|status_badge }}">{{ complaint.status }}</span></div>
+                    <div class="info-item"><label>Room</label><span>{{ complaint.room_number or 'N/A' }} {{ complaint.building or '' }}</span></div>
+                    <div class="info-item"><label>Submitted By</label><span>{{ complaint.submitted_by_name }}</span></div>
+                    <div class="info-item"><label>Assigned To</label><span>{{ complaint.assigned_to_name or 'Unassigned' }}</span></div>
+                    <div class="info-item"><label>Created</label><span>{{ complaint.created_at|datetime_format }}</span></div>
+                    <div class="info-item"><label>Updated</label><span>{{ complaint.updated_at|datetime_format }}</span></div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>Description</h4>
+                    <p class="detail-text">{{ complaint.description }}</p>
+                </div>
+
+                {% if complaint.resolution_notes %}
+                <div class="detail-section">
+                    <h4>Resolution Notes</h4>
+                    <p class="detail-text">{{ complaint.resolution_notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Actions Panel -->
+        <div>
+            <!-- Assign -->
+            {% if complaint.status in ['OPEN'] %}
+            <div class="card">
+                <div class="card-header"><h3>Assign Complaint</h3></div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.complaint_assign', complaint_id=complaint.complaint_id) }}" class="form">
+                        <div class="form-group">
+                            <label for="assigned_to">Assign To</label>
+                            <select id="assigned_to" name="assigned_to" required>
+                                <option value="">-- Select Staff --</option>
+                                {% for s in staff %}
+                                <option value="{{ s.user_id }}">{{ s.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Assign</button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Update Status -->
+            <div class="card">
+                <div class="card-header"><h3>Update Status</h3></div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.complaint_status', complaint_id=complaint.complaint_id) }}" class="form">
+                        <div class="form-group">
+                            <label for="status">New Status</label>
+                            <select id="status" name="status" required>
+                                {% for s in ['OPEN','ASSIGNED','IN_PROGRESS','RESOLVED','CLOSED','REJECTED'] %}
+                                <option value="{{ s }}" {{ 'selected' if complaint.status == s }}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="resolution_notes">Notes</label>
+                            <textarea id="resolution_notes" name="resolution_notes" rows="3" placeholder="Optional notes...">{{ complaint.resolution_notes or '' }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Delete -->
+            <div class="card">
+                <div class="card-header"><h3>Danger Zone</h3></div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.complaint_delete', complaint_id=complaint.complaint_id) }}" onsubmit="return confirm('Are you sure you want to permanently delete this complaint?')">
+                        <button type="submit" class="btn btn-danger">Delete Complaint</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status History -->
+    <div class="card">
+        <div class="card-header"><h3>Status History</h3></div>
+        <div class="card-body">
+            {% if history %}
+            <div class="timeline">
+                {% for h in history %}
+                <div class="timeline-item">
+                    <div class="timeline-marker badge badge-{{ h.new_status|status_badge }}"></div>
+                    <div class="timeline-content">
+                        <strong>{{ h.old_status or 'N/A' }} → {{ h.new_status }}</strong>
+                        <span class="text-muted">by {{ h.changed_by_name }} at {{ h.changed_at|datetime_format }}</span>
+                        {% if h.notes %}<p class="text-sm">{{ h.notes }}</p>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">No status history.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

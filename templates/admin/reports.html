@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Reports - Admin{% endblock %}
+{% block page_title %}Reports & Analytics{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <!-- Attendance Report -->
+    <div class="card">
+        <div class="card-header"><h2> Attendance Report</h2></div>
+        <div class="card-body">
+            {% if attendance_summary %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Student #</th><th>Name</th><th>Total Sessions</th><th>Present</th><th>Late</th><th>Absent</th><th>Marked</th><th>Attendance %</th></tr></thead>
+                    <tbody>
+                        {% for a in attendance_summary %}
+                        {% set pct = ((a.present_count + a.late_count) / a.total_sessions * 100)|round(1) if a.total_sessions > 0 else 0 %}
+                        <tr>
+                            <td>{{ a.student_number }}</td>
+                            <td>{{ a.full_name }}</td>
+                            <td>{{ a.total_sessions }}</td>
+                            <td><span class="text-success">{{ a.present_count }}</span></td>
+                            <td><span class="text-warning">{{ a.late_count }}</span></td>
+                            <td><span class="text-danger">{{ a.absent_count }}</span></td>
+                            <td>{{ a.total_marked }}</td>
+                            <td>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar {% if pct >= 75 %}progress-green{% elif pct >= 50 %}progress-yellow{% else %}progress-red{% endif %}" style="width: {{ pct }}%"></div>
+                                    <span class="progress-text">{{ pct }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">No attendance data available.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Booking Report -->
+    <div class="card">
+        <div class="card-header"><h2> Booking Report</h2></div>
+        <div class="card-body">
+            {% if booking_summary %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Room</th><th>Building</th><th>Type</th><th>Total</th><th>Approved</th><th>Rejected</th><th>Pending</th></tr></thead>
+                    <tbody>
+                        {% for b in booking_summary %}
+                        <tr>
+                            <td>{{ b.room_number }}</td>
+                            <td>{{ b.building }}</td>
+                            <td>{{ b.room_type }}</td>
+                            <td><strong>{{ b.total_bookings }}</strong></td>
+                            <td><span class="text-success">{{ b.approved }}</span></td>
+                            <td><span class="text-danger">{{ b.rejected }}</span></td>
+                            <td><span class="text-warning">{{ b.pending }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">No booking data available.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Complaint Report -->
+    <div class="card">
+        <div class="card-header"><h2> Complaint Report</h2></div>
+        <div class="card-body">
+            {% if complaint_summary %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Category</th><th>Priority</th><th>Total</th><th>Resolved</th><th>Open</th></tr></thead>
+                    <tbody>
+                        {% for c in complaint_summary %}
+                        <tr>
+                            <td>{{ c.category }}</td>
+                            <td><span class="badge badge-{{ c.priority|status_badge }}">{{ c.priority }}</span></td>
+                            <td><strong>{{ c.total }}</strong></td>
+                            <td><span class="text-success">{{ c.resolved }}</span></td>
+                            <td><span class="text-danger">{{ c.open_count }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">No complaint data available.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

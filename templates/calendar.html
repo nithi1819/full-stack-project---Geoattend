@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/{{user.role|lower}}" class="nav-link"> Dashboard</a>
+<a href="/{{user.role|lower}}/calendar" class="nav-link active"> Calendar</a>
+{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Academic Calendar</h1><p class="text-muted">2025-2026</p>
+{% if user.role=='ADMIN' %}<button class="btn btn-primary" onclick="showModal('calModal')">+ Add Event</button>{% endif %}</div>
+<div id="events"><div class="loading">Loading...</div></div>
+<div class="modal" id="calModal"><div class="modal-content"><h3>Add Calendar Event</h3>
+  <div class="form-group"><label>Title</label><input type="text" id="calTitle" class="form-control"></div>
+  <div class="form-group"><label>Type</label><select id="calType" class="form-control"><option>HOLIDAY</option><option>EXAM</option><option>INTERNAL_ASSESSMENT</option><option>EVENT</option><option>SEMESTER_START</option><option>SEMESTER_END</option></select></div>
+  <div class="form-row"><div class="form-group"><label>Start</label><input type="date" id="calStart" class="form-control"></div><div class="form-group"><label>End</label><input type="date" id="calEnd" class="form-control"></div></div>
+  <div class="btn-group"><button class="btn btn-secondary" onclick="hideModal('calModal')">Cancel</button><button class="btn btn-primary" onclick="createEvent()">Create</button></div>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const typeColors={SEMESTER_START:'green',SEMESTER_END:'red',HOLIDAY:'amber',EXAM:'red',INTERNAL_ASSESSMENT:'purple',EVENT:'brand'};
+async function load(){
+  const events=await api('/api/calendar');
+  document.getElementById('events').innerHTML=events.length?events.map(e=>`<div class="card mb-2 flex gap-3"><div class="color-bar bg-${typeColors[e.event_type]||'gray'}"></div><div class="flex-1"><strong>${e.title}</strong> <span class="badge badge-gray text-xs">${e.event_type?.replace(/_/g,' ')}</span><p class="text-sm text-muted">${e.start_date?.split('T')[0]}${e.end_date?' — '+e.end_date?.split('T')[0]:''}</p></div>${'{{user.role}}'==='ADMIN'?`<button class="btn btn-sm btn-danger" onclick="deleteEvent('${e.id}')"></button>`:''}</div>`).join(''):'<p class="empty">No calendar events</p>';
+}
+async function createEvent(){
+  await api('/api/calendar','POST',{title:document.getElementById('calTitle').value,eventType:document.getElementById('calType').value,startDate:document.getElementById('calStart').value,endDate:document.getElementById('calEnd').value||null});
+  hideModal('calModal');load();
+}
+async function deleteEvent(id){if(confirm('Delete?')){await api(`/api/calendar/${id}`,'DELETE');load();}}
+load();
+</script>
+{% endblock %}

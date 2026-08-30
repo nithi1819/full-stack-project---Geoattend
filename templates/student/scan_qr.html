@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Scan QR - Student{% endblock %}
+{% block page_title %}Scan QR / Enter Attendance Token{% endblock %}
+
+{% block head_extra %}
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="grid-2">
+        <!-- QR Scanner -->
+        <div class="card">
+            <div class="card-header"><h2>Scan QR Code</h2></div>
+            <div class="card-body" style="text-align: center;">
+                <p class="text-muted" id="scanner-help">Allow camera access, then hold the QR code inside the camera frame.</p>
+                <div id="qr-reader" style="width: 100%; max-width: 400px; margin: 1rem auto; min-height: 110px;"></div>
+                <div id="qr-result" class="qr-result" role="status" aria-live="polite" style="margin-top: 1rem;"></div>
+                <button id="start-scan" type="button" class="btn btn-primary" onclick="startScanner()" style="margin-top: 1rem;">Start Camera Scanner</button>
+                <button id="stop-scan" class="btn btn-danger" onclick="stopScanner()" style="margin-top: 1rem; display: none;">Stop Scanner</button>
+            </div>
+        </div>
+
+        <!-- Manual Entry -->
+        <div class="card">
+            <div class="card-header"><h2> Enter Token Manually</h2></div>
+            <div class="card-body">
+                <p class="text-muted">If you cannot scan the QR code, you can enter the attendance token manually. Ask your faculty for the token displayed on screen.</p>
+                <form id="attendance-form" method="POST" action="{{ url_for('student.mark_attendance') }}" class="form" style="margin-top: 1rem;">
+                    <div class="form-group">
+                        <label for="token">Attendance Token</label>
+                        <textarea id="token" name="token" rows="3" required placeholder="Paste or type the attendance token here...">{{ token }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Mark Attendance</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let html5QrScanner = null;
+let scannerRunning = false;
+let attendanceSubmitting = false;
+
+function showScannerMessage(message, category) {
+    const result = document.getElementById('qr-result');
+    result.innerHTML = '<div class="flash flash-' + category + '"><span class="flash-text">' + message + '</span></div>';
+}
+
+function setScannerButtons(running) {
+    document.getElementById('start-scan').style.display = running ? 'none' : 'inline-block';
+    document.getElementById('stop-scan').style.display = running ? 'inline-block' : 'none';
+}
+
+async function startScanner() {
+    if (scannerRunning || attendanceSubmitting) return;
+    if (typeof Html5Qrcode === 'undefined') {
+        showScannerMessage('The QR scanner could not load. Use the manual token option below, or check your internet connection and reload the page.', 'warning');
+        return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showScannerMessage('This browser does not support camera scanning. Use the manual token option below.', 'warning');
+        return;
+    }
+    if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+        showScannerMessage('Camera access on a phone requires HTTPS. Scan the faculty QR using your phone Camera app instead; it opens this attendance page with the token.', 'warning');
+        return;
+    }
+
+    html5QrScanner = new Html5Qrcode('qr-reader');
+    showScannerMessage('Opening camera...', 'info');
+    try {
+        await html5QrScanner.start(
+            { facingMode: { exact: 'environment' } },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            onScanSuccess,
+            onScanFailure
+        );
+    } catch (primaryError) {
+        try {
+            await html5QrScanner.start(
+                { facingMode: 'environment' },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess,
+                onScanFailure
+            );
+        } catch (error) {
+            html5QrScanner = null;
+            showScannerMessage('Camera could not be started. Allow camera permission, close other apps using the camera, then try again. You can also enter the faculty token manually.', 'danger');
+            return;
+        }
+    }
+    scannerRunning = true;
+    setScannerButtons(true);
+    showScannerMessage('Camera is ready. Hold the QR code inside the frame.', 'info');
+}
+
+async function stopScanner() {
+    if (html5QrScanner && scannerRunning) {
+        try {
+            await html5QrScanner.stop();
+            html5QrScanner.clear();
+        } catch (error) {
+            console.error('Unable to stop QR scanner:', error);
+        }
+    }
+    html5QrScanner = null;
+    scannerRunning = false;
+    setScannerButtons(false);
+}
+
+async function onScanSuccess(decodedText) {
+    if (attendanceSubmitting) return;
+    attendanceSubmitting = true;
+    // Extract token from URL if it contains one
+    let token = decodedText;
+    try {
+        const url = new URL(decodedText, window.location.origin);
+        token = url.searchParams.get('token') || decodedText;
+    } catch (error) {
+        // Keep the decoded value for scanners that return plain token text.
+    }
+    document.getElementById('token').value = token;
+    showScannerMessage('QR code read. Marking attendance...', 'info');
+    await stopScanner();
+    document.getElementById('attendance-form').requestSubmit();
+}
+
+function onScanFailure(error) {
+    // Ignore scan failures (expected while scanning)
+}
+</script>
+{% endblock %}

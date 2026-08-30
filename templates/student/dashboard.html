@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard - QR Attendance{% endblock %}
+{% block page_title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <!-- Attendance Stats -->
+    <div class="stats-grid">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon"></div>
+            <div class="stat-info"><span class="stat-value">{{ stats.attendance_pct }}%</span><span class="stat-label">Attendance</span></div>
+        </div>
+        <div class="stat-card stat-success">
+            <div class="stat-icon"></div>
+            <div class="stat-info"><span class="stat-value">{{ stats.present }}</span><span class="stat-label">Present</span></div>
+        </div>
+        <div class="stat-card stat-warning">
+            <div class="stat-icon"></div>
+            <div class="stat-info"><span class="stat-value">{{ stats.late }}</span><span class="stat-label">Late</span></div>
+        </div>
+        <div class="stat-card stat-danger">
+            <div class="stat-icon"></div>
+            <div class="stat-info"><span class="stat-value">{{ stats.absent }}</span><span class="stat-label">Absent</span></div>
+        </div>
+        <div class="stat-card stat-secondary">
+            <div class="stat-icon"></div>
+            <div class="stat-info"><span class="stat-value">{{ stats.my_bookings }}</span><span class="stat-label">My Bookings</span></div>
+        </div>
+        <div class="stat-card stat-info">
+            <div class="stat-icon"></div>
+            <div class="stat-info"><span class="stat-value">{{ stats.my_complaints }}</span><span class="stat-label">My Complaints</span></div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <!-- Active Sessions -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Active Attendance Sessions</h3>
+                <a href="{{ url_for('student.scan_qr') }}" class="btn btn-sm btn-primary"> Scan QR</a>
+            </div>
+            <div class="card-body">
+                {% if active_sessions %}
+                {% for s in active_sessions %}
+                <div class="session-card">
+                    <div class="session-info">
+                        <strong>{{ s.class_name }}</strong>
+                        <span class="text-muted">{{ s.course_name or '' }} | {{ s.session_date|date_format }}</span>
+                        <span class="text-muted">Faculty: {{ s.created_by_name }}</span>
+                    </div>
+                    <a href="{{ url_for('student.scan_qr') }}?token={{ s.qr_token }}" class="btn btn-xs btn-primary">Mark Attendance</a>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">No active attendance sessions right now.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Attendance -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Recent Attendance</h3>
+                <a href="{{ url_for('student.attendance_history') }}" class="btn btn-sm btn-secondary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_attendance %}
+                <table class="table table-sm">
+                    <thead><tr><th>Class</th><th>Date</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for r in recent_attendance %}
+                        <tr>
+                            <td>{{ r.class_name }}</td>
+                            <td>{{ r.session_date|date_format }}</td>
+                            <td><span class="badge badge-{{ r.status|status_badge }}">{{ r.status }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">No attendance records yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Rooms -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Available Rooms</h3>
+            <a href="{{ url_for('student.rooms_list') }}" class="btn btn-sm btn-secondary">View All</a>
+        </div>
+        <div class="card-body">
+            {% if available_rooms %}
+            <div class="room-grid">
+                {% for r in available_rooms %}
+                <div class="room-card">
+                    <strong>{{ r.room_number }}</strong>
+                    <span class="text-muted">{{ r.building }} | {{ r.room_type }}</span>
+                    <span>Cap: {{ r.capacity }}</span>
+                    <a href="{{ url_for('student.booking_create') }}?room_id={{ r.room_id }}" class="btn btn-xs btn-primary">Book This Room</a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">No rooms available.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

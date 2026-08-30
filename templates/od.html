@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/{{user.role|lower}}" class="nav-link"> Dashboard</a>
+<a href="/{{user.role|lower}}/od" class="nav-link active"> OD Applications</a>
+{% endblock %}
+{% block content %}
+<div class="page-header"><h1>OD Applications</h1>
+{% if user.role in ('STUDENT','REP') %}<button class="btn btn-primary" onclick="showModal('odModal')">+ Apply for OD</button>{% endif %}</div>
+<div id="pendingOD"></div>
+<div class="card mt-6" id="odList"><div class="loading">Loading...</div></div>
+<div class="modal" id="odModal"><div class="modal-content"><h3>Apply for OD</h3>
+  <div class="form-group"><label>Reason</label><textarea id="odReason" class="form-control" rows="3"></textarea></div>
+  <div class="form-row"><div class="form-group"><label>Start Date</label><input type="date" id="odStart" class="form-control"></div><div class="form-group"><label>End Date</label><input type="date" id="odEnd" class="form-control"></div></div>
+  <div class="form-group"><label>Periods</label><input type="text" id="odPeriods" class="form-control" value="1 period"></div>
+  <div class="btn-group"><button class="btn btn-secondary" onclick="hideModal('odModal')">Cancel</button><button class="btn btn-primary" onclick="createOD()">Submit</button></div>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const odColors={DRAFT:'gray',PENDING_TEACHER:'yellow',TEACHER_APPROVED:'blue',TEACHER_REJECTED:'red',PENDING_ADMIN:'purple',ADMIN_APPROVED:'green',ADMIN_REJECTED:'red',COMPLETED:'green'};
+async function load(){
+  const role='{{user.role}}';
+  if(role==='STUDENT'||role==='REP'){
+    const ods=await api('/api/od/student');
+    document.getElementById('odList').innerHTML=ods.length?ods.map(o=>`<div class="card mb-2"><div class="flex-between"><span class="badge badge-${odColors[o.status]||'gray'}">${o.status?.replace(/_/g,' ')}</span><small>${o.created_at?.split('T')[0]}</small></div><p class="mt-2">${o.reason}</p><p class="text-sm text-muted">${o.start_date?.split('T')[0]} - ${o.end_date?.split('T')[0]} | ${o.periods||''}</p></div>`).join(''):'<p class="empty">No OD applications yet</p>';
+  } else {
+    const ods=await api('/api/od/pending');
+    document.getElementById('pendingOD').innerHTML=ods.length?`<h3 class="mb-4 text-sm text-muted uppercase">Pending Approvals</h3>`+ods.map(o=>`<div class="card mb-2"><div class="flex-between"><span><strong>${o.first_name} ${o.last_name}</strong> <small class="text-muted">${o.roll_number}</small> <span class="badge badge-${odColors[o.status]||'gray'}">${o.status?.replace(/_/g,' ')}</span></span><div class="btn-group">${role==='TEACHER'&&o.status==='PENDING_TEACHER'?`<button class="btn btn-primary btn-sm" onclick="approveOD('${o.id}','teacher')">Approve</button>`:''}${role==='ADMIN'&&(o.status==='PENDING_ADMIN'||o.status==='TEACHER_APPROVED')?`<button class="btn btn-primary btn-sm" onclick="approveOD('${o.id}','admin')">Final Approve</button>`:''}<button class="btn btn-danger btn-sm" onclick="rejectOD('${o.id}')">Reject</button></div></div><p class="mt-2">${o.reason}</p></div>`).join(''):'<p class="empty">No pending OD applications</p>';
+    document.getElementById('odList').innerHTML='<p class="text-muted">OD application list appears here.</p>';
+  }
+}
+async function createOD(){
+  const res=await api('/api/od','POST',{reason:document.getElementById('odReason').value,start_date:document.getElementById('odStart').value,end_date:document.getElementById('odEnd').value,periods:document.getElementById('odPeriods').value});
+  if(res?.error){alert(res.error);return;}hideModal('odModal');load();
+}
+async function approveOD(id,type){
+  if(type==='admin'&&!confirm('Approve? Attendance will be updated.'))return;
+  await api(`/api/od/${id}/${type}-approve`,'POST',{});load();
+}
+async function rejectOD(id){const r=prompt('Rejection reason:');if(r)await api(`/api/od/${id}/reject`,'POST',{reason:r});load();}
+load();
+</script>
+{% endblock %}

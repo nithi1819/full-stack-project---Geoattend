@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}My Bookings - Student{% endblock %}
+{% block page_title %}My Room Bookings{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="card">
+        <div class="card-header">
+            <h2>My Bookings</h2>
+            <a href="{{ url_for('student.booking_create') }}" class="btn btn-primary">+ New Booking</a>
+        </div>
+        <div class="card-body">
+            {% if bookings %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>ID</th><th>Room</th><th>Building</th><th>Date</th><th>Time</th><th>Purpose</th><th>Participants</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        {% for b in bookings %}
+                        <tr>
+                            <td>#{{ b.booking_id }}</td>
+                            <td>{{ b.room_number }}</td>
+                            <td>{{ b.building }}</td>
+                            <td>{{ b.booking_date|date_format }}</td>
+                            <td>{{ b.start_time }} - {{ b.end_time }}</td>
+                            <td class="text-sm">{{ b.purpose[:25] }}{% if b.purpose|length > 25 %}...{% endif %}</td>
+                            <td>{{ b.num_participants }}</td>
+                            <td><span class="badge badge-{{ b.status|status_badge }}">{{ b.status }}</span></td>
+                            <td>
+                                {% if b.status in ['PENDING', 'APPROVED'] %}
+                                <form method="POST" action="{{ url_for('student.booking_cancel', booking_id=b.booking_id) }}" class="inline-form" onsubmit="return confirm('Cancel this booking?')">
+                                    <button type="submit" class="btn btn-xs btn-danger">Cancel</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">No bookings yet. <a href="{{ url_for('student.booking_create') }}">Create one</a></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

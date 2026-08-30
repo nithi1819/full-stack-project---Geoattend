@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/{{user.role|lower}}" class="nav-link"> Dashboard</a>
+<a href="/{{user.role|lower}}/devices" class="nav-link active"> Devices</a>
+{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Device Management</h1></div>
+<div id="deviceContent"><div class="loading">Loading...</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const role='{{user.role}}';
+async function load(){
+  if(role==='ADMIN'){
+    const reqs=await api('/api/devices/change-requests');
+    document.getElementById('deviceContent').innerHTML=`<div class="card"><h3>Pending Device Change Requests</h3>${reqs.length?reqs.map(r=>`<div class="list-item"><div><strong>${r.first_name} ${r.last_name}</strong><small>Reason: ${r.reason}</small></div><div class="btn-group"><button class="btn btn-primary btn-sm" onclick="approveChange('${r.id}')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectChange('${r.id}')">Reject</button></div></div>`).join(''):'<p class="empty">No pending requests</p>'}</div>`;
+  } else {
+    const devices=await api('/api/devices/mine');
+    const active=devices?.find(d=>d.status==='ACTIVE');
+    document.getElementById('deviceContent').innerHTML=`${devices?.length?devices.map(d=>`<div class="card mb-2"><div class="flex gap-3 items-center"><div class="icon-circle ${d.status==='ACTIVE'?'bg-green':'bg-red'}"></div><div class="flex-1"><strong>${d.device_name}</strong><small class="text-muted">${d.platform} • ${d.browser}</small><small class="text-xs text-muted">ID: ${d.device_id?.substring(0,12)}...</small></div><span class="badge badge-${d.status==='ACTIVE'?'green':d.status==='REVOKED'?'red':'yellow'}">${d.status}</span></div></div>`).join(''):'<p class="empty">No devices registered</p>'}
+    ${!active?`<button class="btn btn-primary mt-4" onclick="registerDevice()"> Register Device</button>`:''}
+    ${active?`<button class="btn btn-secondary mt-4" onclick="requestChange()"> Request Device Change</button>`:''}`;
+  }
+}
+async function registerDevice(){
+  const res=await api('/api/devices/register','POST',{device_name:navigator.platform+' Browser',platform:navigator.platform,browser:'Browser'});
+  if(res?.error){alert(res.error);return;}if(res?.device)localStorage.setItem('campushub_device_id',res.device.device_id);load();
+}
+async function requestChange(){const r=prompt('Reason for device change:');if(r)await api('/api/devices/change-request','POST',{reason:r});load();}
+async function approveChange(id){await api(`/api/devices/change-requests/${id}/approve`,'POST');load();}
+async function rejectChange(id){await api(`/api/devices/change-requests/${id}/reject`,'POST');load();}
+load();
+</script>
+{% endblock %}

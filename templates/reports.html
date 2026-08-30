@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/admin" class="nav-link"> Dashboard</a>
+<a href="/admin/reports" class="nav-link active"> Reports</a>
+<a href="/admin/audit-logs" class="nav-link"> Audit Logs</a>
+{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Reports & Exports</h1></div>
+<div class="grid-3col">
+  <div class="card hover-card" onclick="window.location='/api/reports/attendance/export'"><div class="icon-large"></div><strong>Attendance Report</strong><small class="text-muted">All attendance data (CSV)</small></div>
+  <div class="card hover-card" onclick="window.location='/api/reports/rooms'"><div class="icon-large"></div><strong>Room Bookings</strong><small class="text-muted">Booking history (CSV)</small></div>
+  <div class="card hover-card" onclick="window.location='/api/reports/complaints'"><div class="icon-large"></div><strong>Complaints Report</strong><small class="text-muted">All complaints (CSV)</small></div>
+</div>
+{% endblock %}

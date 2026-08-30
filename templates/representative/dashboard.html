@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Representative Dashboard - QR Attendance{% endblock %}
+{% block page_title %}Representative Dashboard{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="stats-grid">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon"></div>
+            <div class="stat-info"><span class="stat-value">{{ stats.my_sessions }}</span><span class="stat-label">Active Sessions</span></div>
+        </div>
+        <div class="stat-card stat-warning">
+            <div class="stat-icon"></div>
+            <div class="stat-info"><span class="stat-value">{{ stats.my_bookings }}</span><span class="stat-label">My Bookings</span></div>
+        </div>
+        <div class="stat-card stat-info">
+            <div class="stat-icon"></div>
+            <div class="stat-info"><span class="stat-value">{{ stats.pending_bookings }}</span><span class="stat-label">Pending Bookings</span></div>
+        </div>
+        <div class="stat-card stat-danger">
+            <div class="stat-icon"></div>
+            <div class="stat-info"><span class="stat-value">{{ stats.my_complaints }}</span><span class="stat-label">My Complaints</span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Recent Active Sessions</h3>
+            <a href="{{ url_for('representative.sessions_list') }}" class="btn btn-sm btn-secondary">View All</a>
+        </div>
+        <div class="card-body">
+            {% if recent_sessions %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>Class</th><th>Course</th><th>Date</th><th>Faculty</th><th>Marked</th><th>Status</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        {% for s in recent_sessions %}
+                        <tr>
+                            <td>{{ s.class_name }}</td>
+                            <td>{{ s.course_name or '-' }}</td>
+                            <td>{{ s.session_date|date_format }}</td>
+                            <td>{{ s.created_by_name }}</td>
+                            <td>{{ s.marked_count }}</td>
+                            <td><span class="badge badge-{{ 'success' if s.is_active else 'secondary' }}">{{ 'Active' if s.is_active else 'Closed' }}</span></td>
+                            <td><a href="{{ url_for('representative.session_records', session_id=s.session_id) }}" class="btn btn-xs btn-secondary">View Records</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">No active sessions at the moment.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

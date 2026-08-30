@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block nav %}
+<a href="/{{user.role|lower}}" class="nav-link"> Dashboard</a>
+<a href="/{{user.role|lower}}/rooms" class="nav-link active"> Rooms</a>
+{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Room Bookings</h1><button class="btn btn-primary" onclick="showModal('bookingModal')">+ New Booking</button></div>
+<div class="room-grid" id="rooms"><div class="loading">Loading...</div></div>
+<div class="card mt-6"><h3>My Bookings</h3><div id="bookings"><div class="loading">Loading...</div></div></div>
+<div class="modal" id="bookingModal"><div class="modal-content"><h3>New Room Booking</h3>
+  <div class="form-group"><label>Room</label><select id="bRoom" class="form-control"></select></div>
+  <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="bDate" class="form-control"></div><div class="form-group"><label>Participants</label><input type="number" id="bParticipants" value="10" class="form-control"></div></div>
+  <div class="form-row"><div class="form-group"><label>Start</label><input type="time" id="bStart" value="09:00" class="form-control"></div><div class="form-group"><label>End</label><input type="time" id="bEnd" value="10:00" class="form-control"></div></div>
+  <div class="form-group"><label>Purpose</label><input type="text" id="bPurpose" class="form-control" placeholder="Lab session, meeting..."></div>
+  <div class="btn-group"><button class="btn btn-secondary" onclick="hideModal('bookingModal')">Cancel</button><button class="btn btn-primary" onclick="createBooking()">Book</button></div>
+</div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+const statusColors = {PENDING:'yellow',APPROVED:'green',REJECTED:'red',CANCELLED:'gray'};
+async function load() {
+  const [rooms, bookings] = await Promise.all([api('/api/rooms'), api('/api/bookings')]);
+  document.getElementById('rooms').innerHTML = rooms.map(r => `<div class="room-card"><strong>${r.name}</strong><small>${r.type} • ${r.capacity} seats</small><small>${r.building}</small><span class="badge badge-${r.status==='AVAILABLE'?'green':'red'}">${r.status}</span></div>`).join('');
+  document.getElementById('bookings').innerHTML = bookings.length ? `<table class="table"><thead><tr><th>Room</th><th>Date</th><th>Time</th><th>Purpose</th><th>Status</th><th>Action</th></tr></thead><tbody>${bookings.map(b => `<tr><td>${b.room_name}</td><td>${b.date?.split('T')[0]||''}</td><td>${b.start_time}-${b.end_time}</td><td>${b.purpose}</td><td><span class="badge badge-${statusColors[b.status]||'gray'}">${b.status}</span></td><td>${b.status==='PENDING'&&'{{user.role}}'==='ADMIN'?`<button class="btn btn-sm btn-primary" onclick="approveBooking('${b.id}')"></button><button class="btn btn-sm btn-danger" onclick="rejectBooking('${b.id}')"></button>`:''}${b.status==='PENDING'?`<button class="btn btn-sm btn-secondary" onclick="cancelBooking('${b.id}')">Cancel</button>`:''}</td></tr>`).join('')}</tbody></table>` : '<p class="empty">No bookings yet</p>';
+  document.getElementById('bRoom').innerHTML = rooms.filter(r=>r.status==='AVAILABLE').map(r=>`<option value="${r.id}">${r.name} (${r.type})</option>`).join('');
+}
+async function createBooking() {
+  const res = await api('/api/bookings','POST',{room_id:document.getElementById('bRoom').value,date:document.getElementById('bDate').value,start_time:document.getElementById('bStart').value,end_time:document.getElementById('bEnd').value,purpose:document.getElementById('bPurpose').value,expected_participants:parseInt(document.getElementById('bParticipants').value)});
+  if(res?.error){alert(res.error);return;} hideModal('bookingModal'); load();
+}
+async function approveBooking(id){await api(`/api/bookings/${id}/approve`,'POST');load();}
+async function rejectBooking(id){const r=prompt('Reason:');if(r)await api(`/api/bookings/${id}/reject`,'POST',{reason:r});load();}
+async function cancelBooking(id){if(confirm('Cancel?')){await api(`/api/bookings/${id}/cancel`,'POST');load();}}
+load();
+</script>
+{% endblock %}
